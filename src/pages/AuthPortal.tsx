@@ -9,8 +9,8 @@ export default function AuthPortal() {
         <MobileContainer className="bg-white p-6">
             {/* Logo Section */}
             <div className="flex-1 flex flex-col items-center justify-center">
-                <div className="mb-12 transform hover:scale-105 transition-transform duration-500">
-                    <img src={logoUrl} alt="CampusMarket" className="w-[240px] h-auto object-contain" />
+                <div className="mb-12 transform hover:scale-105 transition-transform duration-500 w-full flex justify-center">
+                    <img src={logoUrl} alt="CampusMarket" className="w-3/4 max-w-[240px] h-auto object-contain" />
                 </div>
 
                 {/* Main Action Buttons */}

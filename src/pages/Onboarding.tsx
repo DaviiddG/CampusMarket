@@ -4,26 +4,21 @@ import MobileContainer from '@/components/layout/MobileContainer';
 import logoUrl from '@/assets/logo.png';
 import productosUrl from '@/assets/productos.jpg';
 import calificarUrl from '@/assets/calificar.png';
+import { TextAnimate } from '@/components/magicui/text-animate';
 
 // Define the steps data based on Figma "Pagina inicial 1, 2, 3"
 const ONBOARDING_STEPS = [
     {
-        title: (
-            <>CampusMarket conecta a emprendedores con personas interesadas en apoyar sus productos.</>
-        ),
+        title: "CampusMarket conecta a emprendedores con personas interesadas en apoyar sus productos.",
         titleClass: "text-[#2F2E41]",
     },
     {
-        title: (
-            <>Explora productos creados por estudiantes, conoce nuevas ideas y apoya los proyectos de la comunidad universitaria.</>
-        ),
+        title: "Explora productos creados por estudiantes, conoce nuevas ideas y apoya los proyectos de la comunidad universitaria.",
         titleClass: "text-[#2F2E41] w-[303px]",
     },
     {
-        title: (
-            <>Califica, comenta y descubre productos únicos mientras apoyas el crecimiento de los emprendedores del campus.</>
-        ),
-        titleClass: "bg-brand-gradient bg-clip-text text-transparent w-[353px]",
+        title: "Califica, comenta y descubre productos únicos mientras apoyas el crecimiento de los emprendedores del campus.",
+        titleClass: "text-[#2F2E41] w-[353px]",
     }
 ];
 
@@ -62,9 +57,16 @@ export default function Onboarding() {
 
             {/* Title Text */}
             <div className="flex-1 flex flex-col items-center mt-6 px-[20px] w-full relative">
-                <h2 className={`font-poppins font-normal text-[21.5px] leading-[32px] text-center transition-all ${ONBOARDING_STEPS[step].titleClass}`}>
+                <TextAnimate
+                    key={step}
+                    animation="blurIn"
+                    as="h2"
+                    by="word"
+                    startOnView={false}
+                    className={`font-poppins font-normal text-[21.5px] leading-[32px] text-center transition-all ${ONBOARDING_STEPS[step].titleClass}`}
+                >
                     {ONBOARDING_STEPS[step].title}
-                </h2>
+                </TextAnimate>
             </div>
 
             {/* Pagination Dots */}
