@@ -22,7 +22,7 @@ export default function SignIn() {
         if (result) {
             setShowSuccess(true);
             setTimeout(() => {
-                navigate('/onboarding');
+                navigate('/onboarding', { replace: true });
             }, 2500);
         }
     };

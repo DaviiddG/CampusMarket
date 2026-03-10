@@ -1,13 +1,15 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MobileContainer from '@/components/layout/MobileContainer';
-import { Hammer, ArrowLeft, LogOut } from 'lucide-react';
+import { Hammer, ArrowLeft, LogOut, AlertCircle } from 'lucide-react';
 import { ShimmerButton } from '@/registry/magicui/shimmer-button';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function DevelopmentScreen() {
     const navigate = useNavigate();
     const { signOut } = useAuth();
+    const [showLogoutModal, setShowLogoutModal] = useState(false);
 
     const handleSignOut = async () => {
         await signOut();
@@ -15,13 +17,56 @@ export default function DevelopmentScreen() {
     };
 
     const handleVolver = () => {
-        if (window.confirm("Debes cerrar sesión para volver al inicio. ¿Deseas cerrar sesión ahora?")) {
-            handleSignOut();
-        }
+        setShowLogoutModal(true);
     };
 
     return (
-        <MobileContainer className="bg-white p-6 relative flex flex-col items-center justify-center">
+        <MobileContainer className="bg-white p-6 relative flex flex-col items-center justify-center overflow-hidden">
+            {/* Custom Logout Modal */}
+            <AnimatePresence>
+                {showLogoutModal && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="absolute inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-6"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            className="bg-white rounded-[2rem] p-8 w-full max-w-sm shadow-2xl flex flex-col items-center text-center"
+                        >
+                            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                                <AlertCircle className="w-8 h-8 text-red-500" />
+                            </div>
+                            <h3 className="text-xl font-bold text-[#102042] mb-2">¿Cerrar Sesión?</h3>
+                            <p className="text-grayText text-sm mb-8">
+                                Necesitas cerrar sesión para salir de esta pantalla y volver al inicio.
+                            </p>
+
+                            <div className="w-full space-y-3">
+                                <ShimmerButton
+                                    onClick={handleSignOut}
+                                    background="#ef4444" // red-500
+                                    className="w-full shadow-lg h-12"
+                                >
+                                    <span className="text-center text-sm font-bold text-white">
+                                        Sí, cerrar sesión
+                                    </span>
+                                </ShimmerButton>
+                                <button
+                                    onClick={() => setShowLogoutModal(false)}
+                                    className="w-full py-3 text-grayText font-bold text-sm hover:bg-gray-50 rounded-xl transition-colors"
+                                >
+                                    Cancelar
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             {/* Back to Home Button */}
             <div className="absolute top-6 left-6 z-10">
                 <button
@@ -68,7 +113,7 @@ export default function DevelopmentScreen() {
                     </ShimmerButton>
 
                     <button
-                        onClick={handleSignOut}
+                        onClick={handleVolver}
                         className="flex items-center justify-center gap-2 w-full py-3 text-red-500 font-bold text-sm tracking-tight hover:bg-red-50 rounded-xl transition-colors"
                     >
                         <LogOut className="w-4 h-4" />
