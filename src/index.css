@@ -24,12 +24,46 @@
 
 @layer utilities {
   .bg-static-mesh {
-    background: linear-gradient(-45deg, #e0c3fc, #8ec5fc, #fbc2eb, #a18cd1);
+    background: #000000;
+  }
+
+  .animate-shimmer-slide {
+    animation: shimmer-slide var(--speed) ease-in-out infinite alternate;
+  }
+
+  .animate-spin-around {
+    animation: spin-around calc(var(--speed) * 2) linear infinite;
+  }
+}
+
+@keyframes shimmer-slide {
+  to {
+    transform: translate(calc(100cqw - 100%), 0);
+  }
+}
+
+@keyframes spin-around {
+  0% {
+    transform: translateZ(0) rotate(0);
+  }
+
+  15%,
+  35% {
+    transform: translateZ(0) rotate(90deg);
+  }
+
+  65%,
+  85% {
+    transform: translateZ(0) rotate(270deg);
+  }
+
+  100% {
+    transform: translateZ(0) rotate(360deg);
   }
 }
 
 #root {
-  @apply w-full min-h-[100dvh] bg-white relative overflow-hidden flex flex-col;
+  @apply w-full min-h-[100dvh] bg-black relative overflow-hidden flex flex-col;
 }
 
 /* Reset input default styles */

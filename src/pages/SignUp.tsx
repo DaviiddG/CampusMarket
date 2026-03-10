@@ -4,6 +4,7 @@ import MobileContainer from '@/components/layout/MobileContainer';
 import { useAuth } from '@/hooks/useAuth';
 import { ChevronLeft, Eye, EyeOff, ChevronDown, CheckCircle } from 'lucide-react';
 import logoUrl from '@/assets/logo.png';
+import { ShimmerButton } from "@/registry/magicui/shimmer-button";
 
 export default function SignUp() {
     const [name, setName] = useState('');
@@ -182,13 +183,15 @@ export default function SignUp() {
 
             {/* Bottom Register Button */}
             <div className="w-full mt-auto pt-4">
-                <button
+                <ShimmerButton
                     onClick={handleSignUp}
                     disabled={loading}
-                    className="btn-dark-blue"
+                    className="w-full shadow-2xl h-14"
                 >
-                    {loading ? 'Cargando...' : 'Registrarse'}
-                </button>
+                    <span className="text-center text-sm leading-none font-bold tracking-tight whitespace-pre-wrap text-white">
+                        {loading ? 'Cargando...' : 'Registrarse'}
+                    </span>
+                </ShimmerButton>
             </div>
         </MobileContainer>
     );

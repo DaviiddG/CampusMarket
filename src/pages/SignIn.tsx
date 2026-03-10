@@ -4,6 +4,7 @@ import MobileContainer from '@/components/layout/MobileContainer';
 import { useAuth } from '@/hooks/useAuth';
 import { ChevronLeft, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import logoUrl from '@/assets/logo.png';
+import { ShimmerButton } from "@/registry/magicui/shimmer-button";
 
 export default function SignIn() {
     const [email, setEmail] = useState('');
@@ -90,13 +91,15 @@ export default function SignIn() {
                     </div>
 
                     <div className="pt-4 flex flex-col gap-4">
-                        <button
+                        <ShimmerButton
                             type="submit"
                             disabled={loading}
-                            className="btn-light-blue"
+                            className="w-full shadow-2xl h-14"
                         >
-                            {loading ? 'Cargando...' : 'Iniciar sesión'}
-                        </button>
+                            <span className="text-center text-sm leading-none font-bold tracking-tight whitespace-pre-wrap text-white">
+                                {loading ? 'Cargando...' : 'Iniciar Sesión'}
+                            </span>
+                        </ShimmerButton>
 
                         <Link to="/register" className="btn-dark-blue">
                             Registrarse

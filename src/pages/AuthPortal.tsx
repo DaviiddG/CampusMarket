@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import MobileContainer from '@/components/layout/MobileContainer';
 import logoUrl from '@/assets/logo.png';
+import { ShimmerButton } from "@/registry/magicui/shimmer-button";
 
 export default function AuthPortal() {
     const navigate = useNavigate();
@@ -15,12 +16,14 @@ export default function AuthPortal() {
 
                 {/* Main Action Buttons */}
                 <div className="w-full space-y-6 px-4">
-                    <button
+                    <ShimmerButton
                         onClick={() => navigate('/login')}
-                        className="btn-dark-blue h-14 text-base"
+                        className="w-full shadow-2xl h-14"
                     >
-                        Iniciar Sesión
-                    </button>
+                        <span className="text-center text-base leading-none font-bold tracking-tight whitespace-pre-wrap text-white">
+                            Iniciar Sesión
+                        </span>
+                    </ShimmerButton>
 
                     <div className="flex items-center gap-4 py-2">
                         <div className="h-[1px] flex-1 bg-gray-200"></div>
