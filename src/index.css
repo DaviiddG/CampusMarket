@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply m-0 p-0 font-inter bg-gray-50 text-darkText flex justify-center items-center min-h-screen relative;
+  }
+}
+
+/* Simulate the 375x812 constraints if on desktop */
+#root {
+  @apply w-full h-[100dvh] max-w-[375px] max-h-[812px] bg-white relative overflow-hidden shadow-2xl;
+}
+
+/* Reset input default styles */
+input:focus {
+  outline: none;
+}
