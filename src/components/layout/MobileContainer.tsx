@@ -12,7 +12,7 @@ export default function MobileContainer({ children, className = "bg-white" }: Mo
                 className={`w-full h-full min-h-[600px] max-w-md relative flex flex-col rounded-[2rem] shadow-[0_0_50px_rgba(0,0,0,0.4)] md:shadow-[0_0_50px_rgba(0,0,0,0.1)] overflow-hidden ${className}`}
             >
                 {/* Content wrapper */}
-                <div className="flex-1 w-full flex flex-col items-center">
+                <div className="flex-1 w-full flex flex-col items-center justify-center">
                     {children}
                 </div>
             </div>

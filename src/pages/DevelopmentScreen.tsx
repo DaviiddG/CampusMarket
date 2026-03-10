@@ -21,7 +21,7 @@ export default function DevelopmentScreen() {
     };
 
     return (
-        <MobileContainer className="bg-white p-6 relative flex flex-col items-center justify-center overflow-hidden">
+        <MobileContainer className="bg-white p-6 relative flex flex-col items-center justify-center overflow-hidden h-full min-h-full">
             {/* Custom Logout Modal */}
             <AnimatePresence>
                 {showLogoutModal && (

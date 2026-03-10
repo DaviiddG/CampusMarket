@@ -6,13 +6,23 @@ import { ChevronLeft, Mail, Lock, Eye, EyeOff, CheckCircle } from 'lucide-react'
 import logoUrl from '@/assets/logo.png';
 import { ShimmerButton } from "@/registry/magicui/shimmer-button";
 
+import { useAuthContext } from '@/contexts/AuthContext';
+
 export default function SignIn() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
     const { signIn, loading, error } = useAuth();
+    const { session } = useAuthContext();
     const navigate = useNavigate();
+
+    // Redirect returning users if they are already logged in when visiting this page
+    React.useEffect(() => {
+        if (session && !showSuccess) {
+            navigate('/development', { replace: true });
+        }
+    }, [session, showSuccess, navigate]);
 
     const handleSignIn = async (e: React.FormEvent) => {
         e.preventDefault();

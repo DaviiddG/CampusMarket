@@ -18,8 +18,8 @@ function AppRoutes() {
       <Route path="/" element={session ? <Navigate to="/development" replace /> : <Navigate to="/auth-portal" replace />} />
       <Route path="/onboarding" element={<Onboarding />} />
       <Route path="/auth-portal" element={session ? <Navigate to="/development" replace /> : <AuthPortal />} />
-      <Route path="/login" element={session ? <Navigate to="/development" replace /> : <SignIn />} />
-      <Route path="/register" element={session ? <Navigate to="/development" replace /> : <SignUp />} />
+      <Route path="/login" element={<SignIn />} />
+      <Route path="/register" element={<SignUp />} />
       <Route path="/development" element={session ? <DevelopmentScreen /> : <Navigate to="/auth-portal" replace />} />
     </Routes>
   );
