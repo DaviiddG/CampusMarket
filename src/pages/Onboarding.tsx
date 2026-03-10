@@ -35,7 +35,7 @@ export default function Onboarding() {
         if (step < 2) {
             setStep(step + 1);
         } else {
-            navigate('/login');
+            navigate('/auth-portal');
         }
     };
 
