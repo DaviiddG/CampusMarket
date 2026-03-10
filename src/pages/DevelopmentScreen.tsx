@@ -14,12 +14,18 @@ export default function DevelopmentScreen() {
         navigate('/auth-portal');
     };
 
+    const handleVolver = () => {
+        if (window.confirm("Debes cerrar sesión para volver al inicio. ¿Deseas cerrar sesión ahora?")) {
+            handleSignOut();
+        }
+    };
+
     return (
         <MobileContainer className="bg-white p-6 relative flex flex-col items-center justify-center">
             {/* Back to Home Button */}
             <div className="absolute top-6 left-6 z-10">
                 <button
-                    onClick={() => navigate('/auth-portal')}
+                    onClick={handleVolver}
                     className="p-2 -ml-2 text-darkText/50 hover:text-darkText transition-colors flex items-center gap-2"
                 >
                     <ArrowLeft className="w-5 h-5" />
@@ -52,7 +58,7 @@ export default function DevelopmentScreen() {
 
                 <div className="w-full pt-8 flex flex-col gap-4">
                     <ShimmerButton
-                        onClick={() => navigate('/auth-portal')}
+                        onClick={handleVolver}
                         background="#9AD7F3"
                         className="w-full shadow-2xl h-14"
                     >
