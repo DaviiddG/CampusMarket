@@ -126,9 +126,16 @@ export default function SignIn() {
                             </span>
                         </ShimmerButton>
 
-                        <Link to="/register" className="btn-dark-blue">
-                            Registrarse
-                        </Link>
+                        <ShimmerButton
+                            type="button"
+                            onClick={() => navigate('/register')}
+                            background="#102042"
+                            className="w-full shadow-2xl h-14"
+                        >
+                            <span className="text-center text-sm leading-none font-bold tracking-tight whitespace-pre-wrap text-white">
+                                Registrarse
+                            </span>
+                        </ShimmerButton>
                     </div>
                 </form>
             </div>
