@@ -1,11 +1,18 @@
 import { useNavigate } from 'react-router-dom';
 import MobileContainer from '@/components/layout/MobileContainer';
-import { Hammer, ArrowLeft } from 'lucide-react';
+import { Hammer, ArrowLeft, LogOut } from 'lucide-react';
 import { ShimmerButton } from '@/registry/magicui/shimmer-button';
 import { motion } from 'framer-motion';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function DevelopmentScreen() {
     const navigate = useNavigate();
+    const { signOut } = useAuth();
+
+    const handleSignOut = async () => {
+        await signOut();
+        navigate('/auth-portal');
+    };
 
     return (
         <MobileContainer className="bg-white p-6 relative flex flex-col items-center justify-center">
@@ -43,7 +50,7 @@ export default function DevelopmentScreen() {
                     </p>
                 </div>
 
-                <div className="w-full pt-8">
+                <div className="w-full pt-8 flex flex-col gap-4">
                     <ShimmerButton
                         onClick={() => navigate('/auth-portal')}
                         background="#9AD7F3"
@@ -53,6 +60,14 @@ export default function DevelopmentScreen() {
                             Regresar al Inicio
                         </span>
                     </ShimmerButton>
+
+                    <button
+                        onClick={handleSignOut}
+                        className="flex items-center justify-center gap-2 w-full py-3 text-red-500 font-bold text-sm tracking-tight hover:bg-red-50 rounded-xl transition-colors"
+                    >
+                        <LogOut className="w-4 h-4" />
+                        Cerrar Sesión
+                    </button>
                 </div>
             </motion.div>
         </MobileContainer>
