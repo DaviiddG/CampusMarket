@@ -36,54 +36,57 @@ export default function Onboarding() {
 
     return (
         <MobileContainer>
-            {/* Visual Image Placeholder (Simulated ChatGPT Image / Circles) */}
-            <div className="relative w-full h-[280px] mt-8 flex justify-center items-center">
-                {step === 0 && (
-                    <div className="w-[240px] h-[240px] flex justify-center items-center">
-                        <img src={logoUrl} alt="CampusMarket Logo" className="w-full h-auto object-contain drop-shadow-md" />
-                    </div>
-                )}
-                {step === 1 && (
-                    <div className="w-[280px] h-[280px] bg-white rounded-2xl shadow-lg border border-gray-100 flex items-center justify-center overflow-hidden">
-                        <img src={productosUrl} alt="Productos" className="w-full h-full object-cover" />
-                    </div>
-                )}
-                {step === 2 && (
-                    <div className="w-[280px] h-[280px] bg-white rounded-2xl shadow-lg border border-gray-100 flex items-center justify-center overflow-hidden">
-                        <img src={calificarUrl} alt="Calificar" className="w-full h-full object-cover" />
-                    </div>
-                )}
-            </div>
-
-            {/* Title Text */}
-            <div className="flex-1 flex flex-col items-center mt-6 px-[20px] w-full relative">
-                <TextAnimate
-                    key={step}
-                    animation="blurIn"
-                    as="h2"
-                    by="word"
-                    startOnView={false}
-                    className={`font-poppins font-normal text-[21.5px] leading-[32px] text-center transition-all ${ONBOARDING_STEPS[step].titleClass}`}
-                >
-                    {ONBOARDING_STEPS[step].title}
-                </TextAnimate>
-            </div>
-
-            {/* Pagination Dots */}
-            <div className="flex justify-center items-center gap-[7px] mb-8" onClick={handleNext} style={{ cursor: 'pointer' }}>
-                {[0, 1, 2].map((i) => (
-                    <div
-                        key={i}
-                        className={`rounded-full transition-all duration-300 ${step === i
-                            ? 'w-[10px] h-[10px] bg-soft-gradient shadow-[0_0_5px_rgba(154,215,243,0.8)]'
-                            : 'w-[5px] h-[5px] bg-black'
-                            }`}
-                    />
-                ))}
-            </div>
-
-            {/* Hidden button area just to trigger navigation easier on touch */}
+            {/* Hidden button area just to trigger navigation on tap */}
             <div className="absolute inset-0 z-10" onClick={handleNext}></div>
+
+            {/* Centered content */}
+            <div className="flex flex-col items-center justify-center gap-6 w-full px-6 py-8">
+                {/* Visual Image */}
+                <div className="relative w-full h-[260px] flex justify-center items-center">
+                    {step === 0 && (
+                        <div className="w-[220px] h-[220px] flex justify-center items-center">
+                            <img src={logoUrl} alt="CampusMarket Logo" className="w-full h-auto object-contain drop-shadow-md" />
+                        </div>
+                    )}
+                    {step === 1 && (
+                        <div className="w-[260px] h-[260px] bg-white rounded-2xl shadow-lg border border-gray-100 flex items-center justify-center overflow-hidden">
+                            <img src={productosUrl} alt="Productos" className="w-full h-full object-cover" />
+                        </div>
+                    )}
+                    {step === 2 && (
+                        <div className="w-[260px] h-[260px] bg-white rounded-2xl shadow-lg border border-gray-100 flex items-center justify-center overflow-hidden">
+                            <img src={calificarUrl} alt="Calificar" className="w-full h-full object-cover" />
+                        </div>
+                    )}
+                </div>
+
+                {/* Title Text */}
+                <div className="flex flex-col items-center w-full">
+                    <TextAnimate
+                        key={step}
+                        animation="blurIn"
+                        as="h2"
+                        by="word"
+                        startOnView={false}
+                        className={`font-poppins font-normal text-[21.5px] leading-[32px] text-center transition-all ${ONBOARDING_STEPS[step].titleClass}`}
+                    >
+                        {ONBOARDING_STEPS[step].title}
+                    </TextAnimate>
+                </div>
+
+                {/* Pagination Dots */}
+                <div className="flex justify-center items-center gap-[7px] mt-2">
+                    {[0, 1, 2].map((i) => (
+                        <div
+                            key={i}
+                            className={`rounded-full transition-all duration-300 ${step === i
+                                ? 'w-[10px] h-[10px] bg-soft-gradient shadow-[0_0_5px_rgba(154,215,243,0.8)]'
+                                : 'w-[5px] h-[5px] bg-black'
+                                }`}
+                        />
+                    ))}
+                </div>
+            </div>
         </MobileContainer>
     );
 }
