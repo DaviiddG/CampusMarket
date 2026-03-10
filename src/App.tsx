@@ -3,6 +3,7 @@ import Onboarding from './pages/Onboarding'
 import AuthPortal from './pages/AuthPortal'
 import SignIn from './pages/SignIn'
 import SignUp from './pages/SignUp'
+import DevelopmentScreen from './pages/DevelopmentScreen'
 
 function App() {
   return (
@@ -13,6 +14,7 @@ function App() {
         <Route path="/auth-portal" element={<AuthPortal />} />
         <Route path="/login" element={<SignIn />} />
         <Route path="/register" element={<SignUp />} />
+        <Route path="/development" element={<DevelopmentScreen />} />
       </Routes>
     </Router>
   )
