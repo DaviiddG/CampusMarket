@@ -84,12 +84,12 @@ export default function SignIn() {
                     </div>
 
                     <div className="flex justify-center">
-                        <button type="button" className="text-[10px] text-darkText/60">
+                        <button type="button" className="text-xs text-darkText/60">
                             ¿Olvidaste tu contraseña? <span className="font-bold text-primary">Cambiar contraseña.</span>
                         </button>
                     </div>
 
-                    <div className="pt-4 flex flex-col gap-8">
+                    <div className="pt-4 flex flex-col gap-4">
                         <button
                             type="submit"
                             disabled={loading}
@@ -98,19 +98,11 @@ export default function SignIn() {
                             {loading ? 'Cargando...' : 'Iniciar sesión'}
                         </button>
 
-                        <div className="flex items-center gap-2 px-2">
-                            <input type="checkbox" id="policy" className="w-3 h-3 rounded-sm border-gray-300" />
-                            <label htmlFor="policy" className="text-[9px] text-grayText">Aceptas las políticas</label>
-                        </div>
+                        <Link to="/register" className="btn-dark-blue">
+                            Registrarse
+                        </Link>
                     </div>
                 </form>
-            </div>
-
-            {/* Bottom Register Button */}
-            <div className="w-full mt-auto pt-6">
-                <Link to="/register" className="btn-dark-blue">
-                    Registrarse
-                </Link>
             </div>
         </MobileContainer>
     );

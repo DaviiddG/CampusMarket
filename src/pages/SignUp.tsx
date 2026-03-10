@@ -173,9 +173,9 @@ export default function SignUp() {
                             id="policy-signup"
                             checked={acceptedPolicy}
                             onChange={(e) => setAcceptedPolicy(e.target.checked)}
-                            className="w-3 h-3 rounded-sm border-gray-300"
+                            className="w-4 h-4 rounded-sm border-gray-300"
                         />
-                        <label htmlFor="policy-signup" className="text-[9px] text-grayText">Aceptas las políticas</label>
+                        <label htmlFor="policy-signup" className="text-xs text-grayText">Aceptas las políticas</label>
                     </div>
                 </form>
             </div>

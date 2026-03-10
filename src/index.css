@@ -22,8 +22,14 @@
   }
 }
 
+@layer utilities {
+  .bg-static-mesh {
+    background: linear-gradient(-45deg, #e0c3fc, #8ec5fc, #fbc2eb, #a18cd1);
+  }
+}
+
 #root {
-  @apply w-full h-[100dvh] max-w-[375px] max-h-[812px] bg-white relative overflow-hidden shadow-2xl flex flex-col;
+  @apply w-full min-h-[100dvh] bg-white relative overflow-hidden flex flex-col;
 }
 
 /* Reset input default styles */

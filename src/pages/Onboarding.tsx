@@ -37,9 +37,9 @@ export default function Onboarding() {
     return (
         <MobileContainer>
             {/* Visual Image Placeholder (Simulated ChatGPT Image / Circles) */}
-            <div className="relative w-full h-[350px] mt-[14px] flex justify-center items-center">
+            <div className="relative w-full h-[280px] mt-8 flex justify-center items-center">
                 {step === 0 && (
-                    <div className="w-[280px] h-[280px] flex justify-center items-center">
+                    <div className="w-[240px] h-[240px] flex justify-center items-center">
                         <img src={logoUrl} alt="CampusMarket Logo" className="w-full h-auto object-contain drop-shadow-md" />
                     </div>
                 )}

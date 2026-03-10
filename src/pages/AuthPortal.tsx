@@ -6,10 +6,10 @@ export default function AuthPortal() {
     const navigate = useNavigate();
 
     return (
-        <MobileContainer className="bg-white p-6">
+        <MobileContainer className="bg-white w-full h-full flex flex-col">
             {/* Logo Section */}
-            <div className="flex-1 flex flex-col items-center justify-center">
-                <div className="mb-12 transform hover:scale-105 transition-transform duration-500 w-full flex justify-center">
+            <div className="flex-1 flex flex-col items-center justify-center p-6 pb-0">
+                <div className="mb-8 transform hover:scale-105 transition-transform duration-500 w-full flex justify-center">
                     <img src={logoUrl} alt="CampusMarket" className="w-3/4 max-w-[240px] h-auto object-contain" />
                 </div>
 
@@ -38,7 +38,7 @@ export default function AuthPortal() {
             </div>
 
             {/* Bottom Footer */}
-            <div className="w-full bg-[#F3F3F3] -mx-6 px-6 py-4 flex justify-center items-center mt-auto">
+            <div className="w-full bg-[#F3F3F3] px-6 py-4 flex justify-center items-center mt-auto">
                 <p className="text-[11px] text-grayText">
                     Listo para crear una cuenta? <button onClick={() => navigate('/register')} className="font-bold text-[#102042]">Registrarse.</button>
                 </p>
