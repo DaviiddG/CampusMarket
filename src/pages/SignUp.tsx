@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MobileContainer from '@/components/layout/MobileContainer';
 import { useAuth } from '@/hooks/useAuth';
-import { ChevronLeft, Eye, EyeOff, ChevronDown } from 'lucide-react';
+import { ChevronLeft, Eye, EyeOff, ChevronDown, CheckCircle } from 'lucide-react';
 import logoUrl from '@/assets/logo.png';
 
 export default function SignUp() {
@@ -13,6 +13,7 @@ export default function SignUp() {
     const [confirmPassword, setConfirmPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [acceptedPolicy, setAcceptedPolicy] = useState(false);
+    const [showSuccess, setShowSuccess] = useState(false);
 
     const { signUp, loading, error } = useAuth();
     const navigate = useNavigate();
@@ -27,11 +28,39 @@ export default function SignUp() {
             alert("Debe aceptar las políticas para continuar");
             return;
         }
-        await signUp(email, password, { data: { full_name: name, role } });
+        const result = await signUp(email, password, {
+            data: {
+                full_name: name,
+                role
+            }
+        });
+
+        if (result) {
+            setShowSuccess(true);
+            setTimeout(() => {
+                navigate('/login');
+            }, 2500);
+        }
     };
 
     return (
-        <MobileContainer className="bg-white p-6">
+        <MobileContainer className="bg-white p-6 relative overflow-hidden">
+            {/* Success Overlay */}
+            {showSuccess && (
+                <div className="absolute inset-0 z-50 bg-white/90 backdrop-blur-sm flex flex-col items-center justify-center animate-in fade-in duration-500">
+                    <div className="bg-white p-8 rounded-full shadow-2xl mb-6 animate-bounce">
+                        <CheckCircle className="w-20 h-20 text-[#9AD7F3]" />
+                    </div>
+                    <h2 className="text-2xl font-bold text-[#102042] mb-2">¡Bienvenido!</h2>
+                    <p className="text-grayText text-center px-8">Tu cuenta en CampusMarket ha sido creada con éxito.</p>
+                    <div className="mt-8 flex gap-1">
+                        <div className="w-2 h-2 bg-[#9AD7F3] rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                        <div className="w-2 h-2 bg-[#9AD7F3] rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                        <div className="w-2 h-2 bg-[#9AD7F3] rounded-full animate-bounce"></div>
+                    </div>
+                </div>
+            )}
+
             {/* Back Button */}
             <div className="w-full mb-2">
                 <button
@@ -158,7 +187,7 @@ export default function SignUp() {
                     disabled={loading}
                     className="btn-dark-blue"
                 >
-                    {loading ? 'Cargando...' : 'Log in'}
+                    {loading ? 'Cargando...' : 'Registrarse'}
                 </button>
             </div>
         </MobileContainer>
