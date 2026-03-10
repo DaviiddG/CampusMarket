@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import MobileContainer from '@/components/layout/MobileContainer';
 import { useAuth } from '@/hooks/useAuth';
-import { ChevronLeft, Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { ChevronLeft, Mail, Lock, Eye, EyeOff, CheckCircle } from 'lucide-react';
 import logoUrl from '@/assets/logo.png';
 import { ShimmerButton } from "@/registry/magicui/shimmer-button";
 
@@ -10,17 +10,41 @@ export default function SignIn() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
+    const [showSuccess, setShowSuccess] = useState(false);
     const { signIn, loading, error } = useAuth();
     const navigate = useNavigate();
 
     const handleSignIn = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!email || !password) return;
-        await signIn(email, password);
+        const result = await signIn(email, password);
+
+        if (result) {
+            setShowSuccess(true);
+            setTimeout(() => {
+                navigate('/onboarding');
+            }, 2500);
+        }
     };
 
     return (
-        <MobileContainer className="bg-white p-6">
+        <MobileContainer className="bg-white p-6 relative overflow-hidden">
+            {/* Success Overlay */}
+            {showSuccess && (
+                <div className="absolute inset-0 z-50 bg-white/90 backdrop-blur-sm flex flex-col items-center justify-center animate-in fade-in duration-500">
+                    <div className="bg-white p-8 rounded-full shadow-2xl mb-6 animate-bounce">
+                        <CheckCircle className="w-20 h-20 text-[#9AD7F3]" />
+                    </div>
+                    <h2 className="text-2xl font-bold text-[#102042] mb-2">¡Inicio de sesión exitoso!</h2>
+                    <p className="text-grayText text-center px-8">Cargando tu experiencia de CampusMarket...</p>
+                    <div className="mt-8 flex gap-1">
+                        <div className="w-2 h-2 bg-[#9AD7F3] rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                        <div className="w-2 h-2 bg-[#9AD7F3] rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                        <div className="w-2 h-2 bg-[#9AD7F3] rounded-full animate-bounce"></div>
+                    </div>
+                </div>
+            )}
+
             {/* Back Button */}
             <div className="w-full mb-4">
                 <button
@@ -94,9 +118,10 @@ export default function SignIn() {
                         <ShimmerButton
                             type="submit"
                             disabled={loading}
+                            background="#9AD7F3"
                             className="w-full shadow-2xl h-14"
                         >
-                            <span className="text-center text-sm leading-none font-bold tracking-tight whitespace-pre-wrap text-white">
+                            <span className="text-center text-sm leading-none font-bold tracking-tight whitespace-pre-wrap text-[#102042]">
                                 {loading ? 'Cargando...' : 'Iniciar Sesión'}
                             </span>
                         </ShimmerButton>

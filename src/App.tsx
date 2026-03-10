@@ -8,7 +8,7 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Navigate to="/onboarding" replace />} />
+        <Route path="/" element={<Navigate to="/auth-portal" replace />} />
         <Route path="/onboarding" element={<Onboarding />} />
         <Route path="/auth-portal" element={<AuthPortal />} />
         <Route path="/login" element={<SignIn />} />

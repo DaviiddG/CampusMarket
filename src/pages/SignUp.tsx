@@ -186,6 +186,7 @@ export default function SignUp() {
                 <ShimmerButton
                     onClick={handleSignUp}
                     disabled={loading}
+                    background="#102042"
                     className="w-full shadow-2xl h-14"
                 >
                     <span className="text-center text-sm leading-none font-bold tracking-tight whitespace-pre-wrap text-white">

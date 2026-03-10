@@ -18,9 +18,10 @@ export default function AuthPortal() {
                 <div className="w-full space-y-6 px-4">
                     <ShimmerButton
                         onClick={() => navigate('/login')}
+                        background="#9AD7F3"
                         className="w-full shadow-2xl h-14"
                     >
-                        <span className="text-center text-base leading-none font-bold tracking-tight whitespace-pre-wrap text-white">
+                        <span className="text-center text-base leading-none font-bold tracking-tight whitespace-pre-wrap text-[#102042]">
                             Iniciar Sesión
                         </span>
                     </ShimmerButton>
@@ -31,12 +32,15 @@ export default function AuthPortal() {
                         <div className="h-[1px] flex-1 bg-gray-200"></div>
                     </div>
 
-                    <button
+                    <ShimmerButton
                         onClick={() => navigate('/register')}
-                        className="w-full text-center py-2 text-[#102042] font-bold text-sm tracking-tight hover:opacity-80 transition-opacity"
+                        background="#102042"
+                        className="w-full shadow-2xl h-14"
                     >
-                        Registrase con el correo
-                    </button>
+                        <span className="text-center text-base leading-none font-bold tracking-tight whitespace-pre-wrap text-white">
+                            Registrarse con el correo
+                        </span>
+                    </ShimmerButton>
                 </div>
             </div>
 
