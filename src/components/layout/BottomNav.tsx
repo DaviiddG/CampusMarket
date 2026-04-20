@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { Home, Search, User, Plus } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 

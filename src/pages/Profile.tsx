@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MobileContainer from '@/components/layout/MobileContainer';
 import BottomNav from '@/components/layout/BottomNav';
-import { ChevronLeft, LogOut, Grid3X3, Bookmark, X } from 'lucide-react';
+import { ChevronLeft, LogOut, Grid3X3, Bookmark } from 'lucide-react';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useFeedContext, type Post } from '@/contexts/FeedContext';
