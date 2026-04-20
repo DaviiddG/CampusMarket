@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Heart, MessageCircle, Send, Bookmark, MoreVertical, Trash2, Edit2, X } from 'lucide-react';
+import { Heart, MessageCircle, Send, Bookmark, MoreVertical, Trash2, Edit2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useFeedContext } from '@/contexts/FeedContext';
 import { useAuthContext } from '@/contexts/AuthContext';
