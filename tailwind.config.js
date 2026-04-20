@@ -17,6 +17,7 @@ export default {
       fontFamily: {
         inter: ['Inter', 'sans-serif'],
         poppins: ['Poppins', 'sans-serif'],
+        roboto: ['Roboto', 'sans-serif'],
       },
       backgroundImage: {
         'brand-gradient': 'linear-gradient(93.02deg, #FF0000 38.65%, #FF4D00 53.47%, #FF004D 70.15%)',

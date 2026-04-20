@@ -17,10 +17,18 @@ export default function SignIn() {
     const { session } = useAuthContext();
     const navigate = useNavigate();
 
-    // Redirect returning users if they are already logged in when visiting this page
     React.useEffect(() => {
         if (session && !showSuccess) {
-            navigate('/development', { replace: true });
+            const metadata = session.user.user_metadata || {};
+            const hasPersonalized = metadata.has_personalized || localStorage.getItem('hasPersonalized');
+            const hasSeenOnboarding = metadata.has_seen_onboarding || localStorage.getItem('hasSeenOnboarding');
+            if (hasPersonalized) {
+                navigate('/home', { replace: true });
+            } else if (hasSeenOnboarding) {
+                navigate('/personalization', { replace: true });
+            } else {
+                navigate('/onboarding', { replace: true });
+            }
         }
     }, [session, showSuccess, navigate]);
 
@@ -32,7 +40,16 @@ export default function SignIn() {
         if (result) {
             setShowSuccess(true);
             setTimeout(() => {
-                navigate('/onboarding', { replace: true });
+                const metadata = result.user?.user_metadata || {};
+                const hasPersonalized = metadata.has_personalized || localStorage.getItem('hasPersonalized');
+                const hasSeenOnboarding = metadata.has_seen_onboarding || localStorage.getItem('hasSeenOnboarding');
+                if (hasPersonalized) {
+                    navigate('/home', { replace: true });
+                } else if (hasSeenOnboarding) {
+                    navigate('/personalization', { replace: true });
+                } else {
+                    navigate('/onboarding', { replace: true });
+                }
             }, 2500);
         }
     };
