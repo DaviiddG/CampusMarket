@@ -1,19 +1,19 @@
 import { useState } from 'react';
-import { Heart, MessageCircle, Send, Bookmark, MoreVertical, Trash2 } from 'lucide-react';
+import { Heart, MessageCircle, Send, Bookmark, MoreVertical, Trash2, Edit2, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useFeedContext } from '@/contexts/FeedContext';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface ProductCardProps {
-  id: string; // Add id
+  id: string; 
   businessName: string;
   avatarUrl: string;
   imageUrl: string;
   price: string;
   description: string;
-  likes: number; // now number from context
-  user_id: string; // Add owner check
+  likes: number; 
+  user_id: string; 
   onDelete?: () => void;
 }
 
@@ -29,13 +29,21 @@ export default function ProductCard({
   onDelete
 }: ProductCardProps) {
   const { user } = useAuthContext();
-  const { likedPostIds, savedPostIds, toggleLike, toggleSave, deletePost } = useFeedContext();
+  const { likedPostIds, savedPostIds, toggleLike, toggleSave, deletePost, updatePost } = useFeedContext();
   const isLiked = likedPostIds.includes(id);
   const isSaved = savedPostIds.includes(id);
+  
   const [showHeartOverlay, setShowHeartOverlay] = useState(false);
   const [showOptionsMenu, setShowOptionsMenu] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  // Edit state
+  const [editPrice, setEditPrice] = useState(price);
+  const [editDescription, setEditDescription] = useState(description);
 
   const isOwner = user?.id === postOwnerId;
 
@@ -48,6 +56,18 @@ export default function ProductCard({
     }
     setShowHeartOverlay(true);
     setTimeout(() => setShowHeartOverlay(false), 800);
+  };
+
+  const handleUpdate = async () => {
+    setIsUpdating(true);
+    const success = await updatePost(id, {
+      price: editPrice,
+      description: editDescription
+    });
+    if (success) {
+      setShowEditModal(false);
+    }
+    setIsUpdating(false);
   };
 
   return (
@@ -68,7 +88,7 @@ export default function ProductCard({
           <div className="relative">
             <button 
               onClick={() => setShowOptionsMenu(!showOptionsMenu)}
-              className="p-1 hover:bg-gray-100 rounded-full transition-colors text-gray-50"
+              className="p-1 hover:bg-gray-100 rounded-full transition-colors"
             >
               <MoreVertical size={20} className="text-gray-500" />
             </button>
@@ -86,6 +106,16 @@ export default function ProductCard({
                     exit={{ opacity: 0, scale: 0.95, y: -10 }}
                     className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 z-40 overflow-hidden"
                   >
+                    <button
+                      onClick={() => {
+                        setShowOptionsMenu(false);
+                        setShowEditModal(true);
+                      }}
+                      className="w-full px-4 py-3 text-left text-gray-700 flex items-center gap-3 hover:bg-gray-50 transition-colors border-b border-gray-50"
+                    >
+                      <Edit2 size={18} />
+                      <span className="font-roboto font-medium text-[14px]">Editar publicación</span>
+                    </button>
                     <button
                       onClick={() => {
                         setShowOptionsMenu(false);
@@ -230,6 +260,67 @@ export default function ProductCard({
                 </div>
               </div>
             </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Modern Edit Modal (Instagram Style) */}
+      <AnimatePresence>
+        {showEditModal && (
+          <div className="fixed inset-0 z-[60] flex flex-col bg-white">
+            {/* Header */}
+            <div className="flex items-center justify-between px-4 h-14 border-b border-gray-100">
+              <button 
+                onClick={() => setShowEditModal(false)}
+                className="text-black font-roboto"
+              >
+                Cancelar
+              </button>
+              <h3 className="font-roboto font-bold text-[16px]">Editar información</h3>
+              <button 
+                onClick={handleUpdate}
+                disabled={isUpdating}
+                className="text-primary font-roboto font-bold disabled:opacity-50"
+              >
+                {isUpdating ? 'Guardando...' : 'Listo'}
+              </button>
+            </div>
+
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto">
+              {/* Product Preview */}
+              <div className="flex items-start p-4 gap-4 border-b border-gray-50">
+                <div className="w-[80px] h-[80px] rounded-lg overflow-hidden bg-gray-100">
+                  <img src={imageUrl} className="w-full h-full object-cover" alt="Preview" />
+                </div>
+                <div className="flex-1">
+                  <label className="text-[12px] text-gray-400 font-roboto uppercase mb-1 block">Precio</label>
+                  <input 
+                    type="text"
+                    value={editPrice}
+                    onChange={(e) => setEditPrice(e.target.value)}
+                    placeholder="$0.00"
+                    className="w-full text-[16px] font-roboto font-bold focus:outline-none text-primary"
+                  />
+                </div>
+              </div>
+
+              {/* Description Field */}
+              <div className="p-4">
+                <label className="text-[12px] text-gray-400 font-roboto uppercase mb-2 block">Descripción</label>
+                <textarea 
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                  placeholder="Escribe un pie de foto..."
+                  rows={6}
+                  className="w-full text-[14px] font-roboto font-light focus:outline-none resize-none"
+                />
+              </div>
+
+              <div className="p-4 bg-gray-50 text-[12px] text-gray-400 font-roboto">
+                Los cambios se verán reflejados inmediatamente en el feed de todos los usuarios.
+              </div>
+            </div>
           </div>
         )}
       </AnimatePresence>

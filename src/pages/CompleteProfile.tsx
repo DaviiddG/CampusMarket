@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useRef, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MobileContainer from '@/components/layout/MobileContainer';
-import { ChevronLeft, CheckCircle } from 'lucide-react';
+import { ChevronLeft, CheckCircle, Camera, User } from 'lucide-react';
 import { ShimmerButton } from '@/registry/magicui/shimmer-button';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
@@ -14,26 +14,71 @@ export default function CompleteProfile() {
   const [bio, setBio] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(user?.user_metadata?.avatar_url || null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const initialName = user?.user_metadata?.full_name || '';
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setAvatarFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatarPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    
-    // Set the backend metadata
-    await supabase.auth.updateUser({ data: { profile_completed: true } });
-    
-    // Simulate API request extra delay
-    setTimeout(() => {
-      // Set the flag for personalization onboarding
-      localStorage.setItem('profileCompleted', 'true');
+
+    let avatarUrl = user?.user_metadata?.avatar_url;
+
+    try {
+      // 1. Upload Avatar if selected
+      if (avatarFile) {
+        const fileName = `avatars/${Date.now()}-${avatarFile.name}`;
+        const { error: uploadError } = await supabase.storage
+          .from('product-images')
+          .upload(fileName, avatarFile);
+
+        if (uploadError) throw uploadError;
+
+        const { data: publicData } = supabase.storage
+          .from('product-images')
+          .getPublicUrl(fileName);
+        
+        avatarUrl = publicData.publicUrl;
+      }
       
+      // 2. Set the backend metadata
+      const { error } = await supabase.auth.updateUser({ 
+        data: { 
+          profile_completed: true,
+          phone_number: phone,
+          bio: bio,
+          avatar_url: avatarUrl
+        } 
+      });
+
+      if (error) throw error;
+      
+      // 3. Success flow
+      localStorage.setItem('profileCompleted', 'true');
       setSuccess(true);
       setTimeout(() => {
         navigate('/personalization', { replace: true });
       }, 1500);
-    }, 500);
+    } catch (err: any) {
+      console.error('Error updating profile:', err);
+      alert('Error al actualizar el perfil: ' + (err.message || 'Error desconocido'));
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -65,6 +110,39 @@ export default function CompleteProfile() {
           <p className="text-sm font-roboto text-grayText">
             Necesitamos algunos detalles de tu emprendimiento para que tus clientes puedan contactarte.
           </p>
+        </div>
+
+        {/* Avatar Selection UI */}
+        <div className="flex flex-col items-center mb-8">
+          <div 
+            onClick={() => fileInputRef.current?.click()}
+            className="relative w-28 h-28 rounded-full bg-gray-100 border-4 border-white shadow-xl overflow-hidden group cursor-pointer"
+          >
+            {avatarPreview ? (
+              <img src={avatarPreview} alt="Preview" className="w-full h-full object-cover transition-transform group-hover:scale-110" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-gray-400">
+                <User size={48} strokeWidth={1} />
+              </div>
+            )}
+            <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+              <Camera className="text-white w-8 h-8" />
+            </div>
+          </div>
+          <button 
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="mt-3 text-[#102042] text-[13px] font-bold"
+          >
+            Cargar foto de perfil
+          </button>
+          <input 
+            type="file"
+            ref={fileInputRef}
+            onChange={handleImageChange}
+            accept="image/*"
+            className="hidden"
+          />
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
@@ -116,9 +194,9 @@ export default function CompleteProfile() {
           <div className="pt-8">
             <ShimmerButton
               type="submit"
-              disabled={loading || phone.length < 10 || bio.length < 10}
+              disabled={loading || phone.length < 10 || bio.length < 3}
               background="#102042"
-              className="w-full shadow-lg h-14"
+              className="w-full shadow-lg h-14 disabled:opacity-50"
             >
               <span className="text-center text-sm leading-none font-bold tracking-tight whitespace-pre-wrap text-white">
                 {loading ? 'Guardando...' : 'Guardar y Continuar'}

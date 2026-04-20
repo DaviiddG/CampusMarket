@@ -27,6 +27,7 @@ export default function Profile() {
 
   useEffect(() => {
     if (!user) return;
+    
     const fetchFollows = async () => {
       // Followers
       const { count: followers } = await supabase
@@ -43,7 +44,25 @@ export default function Profile() {
       if (followers !== null) setFollowersCount(followers);
       if (following !== null) setFollowingCount(following);
     };
+
     fetchFollows();
+
+    // Realtime subscription for follows
+    const channel = supabase
+      .channel('public:follows')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'follows' },
+        () => {
+          // Re-fetch counts when any follow/unfollow happens
+          fetchFollows();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user]);
 
   const handleLogout = async () => {
@@ -99,7 +118,7 @@ export default function Profile() {
           {/* Avatar */}
           <div className="w-[80px] h-[80px] rounded-full bg-gray-300 border border-gray-100 overflow-hidden shadow-sm flex-shrink-0">
             <img 
-              src={`https://api.dicebear.com/7.x/notionists/svg?seed=${displayName}`} 
+              src={user?.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/notionists/svg?seed=${displayName}`} 
               alt="Profile Avatar" 
               className="w-full h-full object-cover"
             />
