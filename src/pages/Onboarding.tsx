@@ -5,6 +5,7 @@ import logoUrl from '@/assets/logo.png';
 import productosUrl from '@/assets/productos.jpg';
 import calificarUrl from '@/assets/calificar.png';
 import { TextAnimate } from '@/components/magicui/text-animate';
+import { supabase } from '@/lib/supabase';
 
 // Define the steps data based on Figma "Pagina inicial 1, 2, 3"
 const ONBOARDING_STEPS = [
@@ -26,11 +27,13 @@ export default function Onboarding() {
     const [step, setStep] = useState(0);
     const navigate = useNavigate();
 
-    const handleNext = () => {
+    const handleNext = async () => {
         if (step < 2) {
             setStep(step + 1);
         } else {
-            navigate('/development', { replace: true });
+            localStorage.setItem('hasSeenOnboarding', 'true');
+            await supabase.auth.updateUser({ data: { has_seen_onboarding: true } });
+            navigate('/personalization', { replace: true });
         }
     };
 

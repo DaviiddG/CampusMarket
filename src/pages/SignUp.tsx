@@ -37,6 +37,9 @@ export default function SignUp() {
         });
 
         if (result) {
+            localStorage.removeItem('hasSeenOnboarding');
+            localStorage.removeItem('hasPersonalized');
+            localStorage.removeItem('profileCompleted');
             setShowSuccess(true);
             setTimeout(() => {
                 navigate('/login');

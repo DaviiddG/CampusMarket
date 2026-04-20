@@ -1,0 +1,174 @@
+import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { supabase } from '@/lib/supabase';
+import { useAuthContext } from '@/contexts/AuthContext';
+
+export interface Post {
+  id: string;
+  user_id: string;
+  businessName: string;
+  avatarUrl: string;
+  imageUrl: string;
+  price: string;
+  description: string;
+  likes: number;     // This will be computed from the `likes` table
+}
+
+interface FeedContextType {
+  posts: Post[];
+  savedPostIds: string[];
+  likedPostIds: string[];
+  addPost: (post: Post) => void;
+  deletePost: (postId: string) => Promise<boolean>;
+  toggleLike: (postId: string) => void;
+  toggleSave: (postId: string) => void;
+  loading: boolean;
+}
+
+const FeedContext = createContext<FeedContextType | undefined>(undefined);
+
+export const FeedProvider = ({ children }: { children: ReactNode }) => {
+  const { user } = useAuthContext();
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [savedPostIds, setSavedPostIds] = useState<string[]>([]);
+  const [likedPostIds, setLikedPostIds] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Initial Fetch logic
+  useEffect(() => {
+    fetchPostsAndInteractions();
+  }, [user]);
+
+  const fetchPostsAndInteractions = async () => {
+    setLoading(true);
+    try {
+      // 1. Fetch Posts
+      const { data: postsData, error: postsError } = await supabase
+        .from('posts')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (postsError) throw postsError;
+
+      // Ensure mapping from DB schema to frontend interface
+      const activePosts: Post[] = (postsData || []).map(p => ({
+        id: p.id,
+        user_id: p.user_id,
+        businessName: p.business_name,
+        avatarUrl: p.avatar_url || `https://api.dicebear.com/7.x/notionists/svg?seed=${p.business_name}`,
+        imageUrl: p.image_url,
+        price: p.price,
+        description: p.description,
+        likes: 0 // Will apply counting next
+      }));
+
+      // 2. Compute Likes for all posts (if likes table is populated)
+      const { data: allLikes } = await supabase.from('likes').select('post_id, user_id');
+      
+      const likesCountMap: Record<string, number> = {};
+      const userLikedSet = new Set<string>();
+
+      allLikes?.forEach(like => {
+        likesCountMap[like.post_id] = (likesCountMap[like.post_id] || 0) + 1;
+        if (user && like.user_id === user.id) {
+          userLikedSet.add(like.post_id);
+        }
+      });
+
+      // Assign counts
+      activePosts.forEach(post => {
+        post.likes = likesCountMap[post.id] || 0;
+      });
+
+      // 3. Saved Posts for the current user
+      const userSavedSet = new Set<string>();
+      if (user) {
+        const { data: savedData } = await supabase
+          .from('saved_posts')
+          .select('post_id')
+          .eq('user_id', user.id);
+          
+        savedData?.forEach(saved => userSavedSet.add(saved.post_id));
+      }
+
+      setPosts(activePosts);
+      setLikedPostIds(Array.from(userLikedSet));
+      setSavedPostIds(Array.from(userSavedSet));
+    } catch (e) {
+      console.error('Error fetching feed data from Supabase. Check if tables (posts, likes, saved_posts) exist:', e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const addPost = (post: Post) => {
+    // When a post is added directly from the UI, we place it smoothly without re-rendering everything.
+    setPosts(prev => [post, ...prev]);
+  };
+
+  const toggleLike = async (postId: string) => {
+    if (!user) return;
+    const isLiked = likedPostIds.includes(postId);
+
+    // Optimistic UI update
+    setLikedPostIds(prev => isLiked ? prev.filter(id => id !== postId) : [...prev, postId]);
+    setPosts(currentPosts => currentPosts.map(p => p.id === postId ? { ...p, likes: isLiked ? Math.max(0, p.likes - 1) : p.likes + 1 } : p));
+
+    // Backend update
+    if (isLiked) {
+      await supabase.from('likes').delete().eq('post_id', postId).eq('user_id', user.id);
+    } else {
+      await supabase.from('likes').insert({ post_id: postId, user_id: user.id });
+    }
+  };
+
+  const toggleSave = async (postId: string) => {
+    if (!user) return;
+    const isSaved = savedPostIds.includes(postId);
+
+    // Optimistic UI update
+    setSavedPostIds(prev => isSaved ? prev.filter(id => id !== postId) : [...prev, postId]);
+
+    // Backend update
+    if (isSaved) {
+      await supabase.from('saved_posts').delete().eq('post_id', postId).eq('user_id', user.id);
+    } else {
+      await supabase.from('saved_posts').insert({ post_id: postId, user_id: user.id });
+    }
+  };
+
+  const deletePost = async (postId: string) => {
+    if (!user) return false;
+    
+    try {
+      // 1. Delete from Supabase (Policies should allow owner to delete)
+      const { error } = await supabase
+        .from('posts')
+        .delete()
+        .eq('id', postId)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      // 2. Optimistic UI update: remove from local state
+      setPosts(prev => prev.filter(p => p.id !== postId));
+      return true;
+    } catch (error) {
+      console.error('Error deleting post:', error);
+      return false;
+    }
+  };
+
+  return (
+    <FeedContext.Provider value={{ posts, savedPostIds, likedPostIds, addPost, deletePost, toggleLike, toggleSave, loading }}>
+      {children}
+    </FeedContext.Provider>
+  );
+};
+
+export const useFeedContext = () => {
+  const context = useContext(FeedContext);
+  if (context === undefined) {
+    throw new Error('useFeedContext must be used within a FeedProvider');
+  }
+  return context;
+};

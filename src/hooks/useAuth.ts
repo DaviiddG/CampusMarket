@@ -60,6 +60,9 @@ export function useAuth() {
         setLoading(true);
         try {
             await supabase.auth.signOut();
+            localStorage.removeItem('hasSeenOnboarding');
+            localStorage.removeItem('hasPersonalized');
+            localStorage.removeItem('profileCompleted');
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : 'Error occurred during sign out';
             setError(message);
