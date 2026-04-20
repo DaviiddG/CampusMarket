@@ -22,6 +22,7 @@ export default function UploadProduct() {
 
   // Fallback to name or placeholder
   const displayName = user?.user_metadata?.full_name || 'Emprendedor';
+  const avatarUrl = user?.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/notionists/svg?seed=${displayName}`;
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -45,7 +46,7 @@ export default function UploadProduct() {
 
     try {
       // 1. Upload to Supabase Storage
-      const fileName = `${Date.now()}-${imageFile.name}`;
+      const fileName = `posts/${Date.now()}-${imageFile.name}`;
       const { error: uploadError } = await supabase.storage
         .from('product-images')
         .upload(fileName, imageFile);
@@ -65,7 +66,7 @@ export default function UploadProduct() {
         .insert({
           user_id: user?.id,
           business_name: displayName,
-          avatar_url: `https://api.dicebear.com/7.x/notionists/svg?seed=${displayName}`,
+          avatar_url: avatarUrl,
           image_url: publicUrl,
           category,
           type,
@@ -92,9 +93,9 @@ export default function UploadProduct() {
       }
 
       navigate('/home');
-    } catch (e) {
+    } catch (e: any) {
       console.error('Error uploading post', e);
-      alert('Hubo un error subiendo la publicación.');
+      alert(`Error al subir la publicación: ${e.message || 'Error desconocido'}. Asegúrate de haber ejecutado el script SQL de permisos.`);
     } finally {
       setIsUploading(false);
     }
@@ -127,7 +128,7 @@ export default function UploadProduct() {
         <div className="flex items-center gap-3 mb-4">
           <div className="w-[40px] h-[40px] rounded-full overflow-hidden border border-gray-100 bg-gray-200">
             <img 
-              src={`https://api.dicebear.com/7.x/notionists/svg?seed=${displayName}`} 
+              src={avatarUrl} 
               alt="Avatar" 
               className="w-full h-full object-cover" 
             />

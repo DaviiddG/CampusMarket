@@ -206,8 +206,9 @@ export const FeedProvider = ({ children }: { children: ReactNode }) => {
       // 2. Optimistic UI update: remove from local state
       setPosts(prev => prev.filter(p => p.id !== postId));
       return true;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting post:', error);
+      alert(`No se pudo eliminar la publicación: ${error.message || 'Error de permisos (RLS)'}. Verifica que seas el dueño y hayas ejecutado el script SQL.`);
       return false;
     }
   };
