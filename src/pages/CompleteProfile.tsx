@@ -56,6 +56,12 @@ export default function CompleteProfile() {
       }
       
       // 2. Set the backend metadata
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        throw new Error('No se encontró una sesión activa. Por favor, intenta cerrar sesión e iniciarla de nuevo.');
+      }
+
       const { error } = await supabase.auth.updateUser({ 
         data: { 
           profile_completed: true,

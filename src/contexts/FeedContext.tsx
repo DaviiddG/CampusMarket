@@ -194,14 +194,24 @@ export const FeedProvider = ({ children }: { children: ReactNode }) => {
     if (!user) return false;
     
     try {
-      // 1. Delete from Supabase (Policies should allow owner to delete)
-      const { error } = await supabase
+      // 1. Delete from Supabase
+      const { data: deletedRows, error } = await supabase
         .from('posts')
         .delete()
         .eq('id', postId)
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .select();
 
       if (error) throw error;
+
+      // Verify if anything was actually deleted
+      if (!deletedRows || deletedRows.length === 0) {
+        console.warn(`No rows deleted for ID ${postId}. User ID: ${user.id}`);
+        alert('No se pudo borrar: No eres el dueño o no tienes permisos (RLS). Ejecuta el script SQL robusto.');
+        return false;
+      }
+
+      console.log('Post deleted successfully from DB:', deletedRows[0]);
 
       // 2. Optimistic UI update: remove from local state
       setPosts(prev => prev.filter(p => p.id !== postId));
