@@ -1,4 +1,4 @@
-import React from 'react'
+import { type ReactNode } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthContext } from '@/contexts/AuthContext'
 import Onboarding from './pages/Onboarding'
@@ -23,7 +23,7 @@ function AppRoutes() {
   const hasSeenOnboarding = userMetadata.has_seen_onboarding || localStorage.getItem('hasSeenOnboarding');
   const hasPersonalized = userMetadata.has_personalized || localStorage.getItem('hasPersonalized');
 
-  const RequireOnboarding = ({ children }: { children: React.ReactNode }) => {
+  const RequireOnboarding = ({ children }: { children: ReactNode }) => {
     if (!session) return <Navigate to="/auth-portal" replace />;
     if (!hasSeenOnboarding) return <Navigate to="/onboarding" replace />;
     if (!hasPersonalized) return <Navigate to="/personalization" replace />;

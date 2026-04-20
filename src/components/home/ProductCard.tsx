@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Heart, MessageCircle, Send, Bookmark, MoreVertical, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useFeedContext } from '@/contexts/FeedContext';
