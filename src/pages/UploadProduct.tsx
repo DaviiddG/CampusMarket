@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MobileContainer from '@/components/layout/MobileContainer';
 import { useAuthContext } from '@/contexts/AuthContext';
@@ -46,7 +46,7 @@ export default function UploadProduct() {
     try {
       // 1. Upload to Supabase Storage
       const fileName = `${Date.now()}-${imageFile.name}`;
-      const { data: uploadData, error: uploadError } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('product-images')
         .upload(fileName, imageFile);
 

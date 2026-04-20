@@ -1,10 +1,10 @@
-import React from 'react';
+
 import MobileContainer from '@/components/layout/MobileContainer';
 import ProductCard from '@/components/home/ProductCard';
 import BottomNav from '@/components/layout/BottomNav';
 import { Search } from 'lucide-react';
 import logoUrl from '@/assets/logo.png';
-import productosUrl from '@/assets/productos.jpg';
+
 
 import { useFeedContext } from '@/contexts/FeedContext';
 
