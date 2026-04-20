@@ -19,6 +19,7 @@ interface FeedContextType {
   likedPostIds: string[];
   addPost: (post: Post) => void;
   deletePost: (postId: string) => Promise<boolean>;
+  updatePost: (postId: string, data: { price: string; description: string }) => Promise<boolean>;
   toggleLike: (postId: string) => void;
   toggleSave: (postId: string) => void;
   loading: boolean;
@@ -36,6 +37,59 @@ export const FeedProvider = ({ children }: { children: ReactNode }) => {
   // Initial Fetch logic
   useEffect(() => {
     fetchPostsAndInteractions();
+
+    // 4. Realtime Subscription
+    const channel = supabase
+      .channel('public:posts')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'posts' },
+        (payload) => {
+          const newPostRaw = payload.new;
+          const newPost: Post = {
+            id: newPostRaw.id,
+            user_id: newPostRaw.user_id,
+            businessName: newPostRaw.business_name,
+            avatarUrl: newPostRaw.avatar_url || `https://api.dicebear.com/7.x/notionists/svg?seed=${newPostRaw.business_name}`,
+            imageUrl: newPostRaw.image_url,
+            price: newPostRaw.price,
+            description: newPostRaw.description,
+            likes: 0
+          };
+          setPosts(prev => {
+            if (prev.some(p => p.id === newPost.id)) return prev;
+            return [newPost, ...prev];
+          });
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'posts' },
+        (payload) => {
+          const updatedPost = payload.new;
+          setPosts(prev => prev.map(p => p.id === updatedPost.id ? { 
+            ...p, 
+            price: updatedPost.price, 
+            description: updatedPost.description,
+            businessName: updatedPost.business_name,
+            avatarUrl: updatedPost.avatar_url || p.avatarUrl,
+            imageUrl: updatedPost.image_url || p.imageUrl
+          } : p));
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'posts' },
+        (payload) => {
+          const removedId = payload.old.id;
+          setPosts(prev => prev.filter(p => p.id !== removedId));
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user]);
 
   const fetchPostsAndInteractions = async () => {
@@ -158,8 +212,32 @@ export const FeedProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const updatePost = async (postId: string, data: { price: string; description: string }) => {
+    if (!user) return false;
+
+    try {
+      const { error } = await supabase
+        .from('posts')
+        .update({
+          price: data.price,
+          description: data.description
+        })
+        .eq('id', postId)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      // Optimistic UI update
+      setPosts(prev => prev.map(p => p.id === postId ? { ...p, ...data } : p));
+      return true;
+    } catch (error) {
+      console.error('Error updating post:', error);
+      return false;
+    }
+  };
+
   return (
-    <FeedContext.Provider value={{ posts, savedPostIds, likedPostIds, addPost, deletePost, toggleLike, toggleSave, loading }}>
+    <FeedContext.Provider value={{ posts, savedPostIds, likedPostIds, addPost, deletePost, updatePost, toggleLike, toggleSave, loading }}>
       {children}
     </FeedContext.Provider>
   );
