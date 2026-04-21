@@ -63,7 +63,7 @@ export default function Personalization() {
   const isContinueDisabled = !isUsuario && !profileCompleted;
 
   return (
-    <MobileContainer className="bg-white">
+    <MobileContainer className="bg-white" showSidebars={false}>
       <AnimatePresence>
         {!isFinishing ? (
           <motion.div

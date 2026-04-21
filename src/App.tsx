@@ -11,6 +11,7 @@ import Personalization from './pages/Personalization'
 import Profile from './pages/Profile'
 import CompleteProfile from './pages/CompleteProfile'
 import UploadProduct from './pages/UploadProduct'
+import UserProfile from './pages/UserProfile'
 
 function AppRoutes() {
   const { session, loading } = useAuthContext();
@@ -41,6 +42,7 @@ function AppRoutes() {
       {/* App Routes requiring full onboarding */}
       <Route path="/home" element={<RequireOnboarding><Home /></RequireOnboarding>} />
       <Route path="/profile" element={<RequireOnboarding><Profile /></RequireOnboarding>} />
+      <Route path="/user/:userId" element={<RequireOnboarding><UserProfile /></RequireOnboarding>} />
       <Route path="/upload" element={<RequireOnboarding><UploadProduct /></RequireOnboarding>} />
       
       {/* Interstitial routes that require session but not full onboarding */}
@@ -52,13 +54,16 @@ function AppRoutes() {
 }
 
 import { FeedProvider } from '@/contexts/FeedContext'
+import { NotificationProvider } from '@/contexts/NotificationContext'
 
 function App() {
   return (
     <Router>
-      <FeedProvider>
-        <AppRoutes />
-      </FeedProvider>
+      <NotificationProvider>
+        <FeedProvider>
+          <AppRoutes />
+        </FeedProvider>
+      </NotificationProvider>
     </Router>
   )
 }

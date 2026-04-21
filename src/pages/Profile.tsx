@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MobileContainer from '@/components/layout/MobileContainer';
 import BottomNav from '@/components/layout/BottomNav';
-import { ChevronLeft, LogOut, Grid3X3, Bookmark } from 'lucide-react';
+import { ChevronLeft, LogOut, Grid3X3, Bookmark, Settings } from 'lucide-react';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useFeedContext, type Post } from '@/contexts/FeedContext';
@@ -98,48 +98,64 @@ export default function Profile() {
 
   return (
     <MobileContainer className="bg-white" justifyCenter={false}>
-      {/* Scrollable Content Wrapper */}
-      <div className="flex-1 w-full overflow-y-auto pb-[70px]">
-        {/* Top Bar */}
-        <div className="flex items-center justify-between px-4 pt-10 pb-4">
-          <button onClick={() => navigate(-1)} className="p-1 -ml-1 text-black hover:bg-gray-100 rounded-full transition-colors">
-            <ChevronLeft size={24} />
-          </button>
-          <div className="font-roboto font-bold text-[16px] text-black">
-            {displayName}
-          </div>
-          <button onClick={handleLogout} className="text-red-500 hover:bg-red-50 p-2 -mr-2 rounded-full transition-colors" title="Cerrar sesión">
-            <LogOut size={20} />
-          </button>
-        </div>
-
-        {/* Profile Stats Header */}
-        <div className="flex items-center justify-between px-6 mb-4">
-          {/* Avatar */}
-          <div className="w-[80px] h-[80px] rounded-full bg-gray-300 border border-gray-100 overflow-hidden shadow-sm flex-shrink-0">
-            <img 
-              src={user?.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/notionists/svg?seed=${displayName}`} 
-              alt="Profile Avatar" 
-              className="w-full h-full object-cover"
-            />
+      {/* Desktop Main Content Container */}
+      <div className="w-full pb-[70px] lg:pb-10">
+        <div className="max-w-[700px] mx-auto w-full">
+          
+          {/* Top Bar - Mobile Only */}
+          <div className="flex items-center justify-between px-4 pt-6 pb-4 lg:hidden">
+            <button onClick={() => navigate(-1)} className="p-1 -ml-1 text-black hover:bg-gray-100 rounded-full transition-colors">
+              <ChevronLeft size={24} />
+            </button>
+            <div className="flex items-center gap-2 font-roboto font-bold text-[16px] text-black">
+              {displayName}
+              <Settings size={18} className="text-black" />
+            </div>
+            <button onClick={handleLogout} className="text-red-500 hover:bg-red-50 p-2 -mr-2 rounded-full transition-colors" title="Cerrar sesión">
+              <LogOut size={20} />
+            </button>
           </div>
 
-          {/* Stats */}
-          <div className="flex flex-1 justify-around items-center pl-6">
-            <div className="flex flex-col items-center">
-              <span className="font-roboto font-bold text-[16px] text-black">{myPosts.length}</span>
-              <span className="font-roboto font-light text-[12px] text-grayText">Publicaciones</span>
+          {/* Profile Stats Header - Responsive */}
+          <div className="flex items-center gap-10 px-6 mt-8 mb-8">
+            {/* Avatar */}
+            <div className="w-[80px] h-[80px] md:w-[150px] md:h-[150px] rounded-full bg-gray-50 border border-gray-100 overflow-hidden shadow-sm flex-shrink-0">
+              <img 
+                src={user?.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/notionists/svg?seed=${displayName}`} 
+                alt="Profile Avatar" 
+                className="w-full h-full object-cover"
+              />
             </div>
-            <div className="flex flex-col items-center">
-              <span className="font-roboto font-bold text-[16px] text-black">{followersCount}</span>
-              <span className="font-roboto font-light text-[12px] text-grayText">Seguidores</span>
-            </div>
-            <div className="flex flex-col items-center">
-              <span className="font-roboto font-bold text-[16px] text-black">{followingCount}</span>
-              <span className="font-roboto font-light text-[12px] text-grayText">Seguidos</span>
+
+            {/* Stats & Actions */}
+            <div className="flex-1 flex flex-col gap-4">
+              <div className="hidden lg:flex items-center gap-6">
+                <h1 className="text-xl font-roboto font-medium text-black">{displayName}</h1>
+                <button 
+                  onClick={handleEditProfile}
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                  title="Configuración"
+                >
+                  <Settings size={22} className="text-black" />
+                </button>
+              </div>
+
+              <div className="flex justify-between md:justify-start md:gap-10 items-center">
+                <div className="flex flex-col md:flex-row md:gap-1 items-center">
+                  <span className="font-roboto font-bold text-[16px] text-black">{myPosts.length}</span>
+                  <span className="font-roboto font-light text-[12px] md:text-[14px] text-grayText md:text-black">Publicaciones</span>
+                </div>
+                <div className="flex flex-col md:flex-row md:gap-1 items-center">
+                  <span className="font-roboto font-bold text-[16px] text-black">{followersCount}</span>
+                  <span className="font-roboto font-light text-[12px] md:text-[14px] text-grayText md:text-black">Seguidores</span>
+                </div>
+                <div className="flex flex-col md:flex-row md:gap-1 items-center">
+                  <span className="font-roboto font-bold text-[16px] text-black">{followingCount}</span>
+                  <span className="font-roboto font-light text-[12px] md:text-[14px] text-grayText md:text-black">Seguidos</span>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
 
         {/* Bio */}
         <div className="px-6 mb-4">
@@ -147,9 +163,9 @@ export default function Profile() {
             {displayName} {role === 'emprendedor' && <span className="opacity-0">✨</span>}
           </h2>
           <p className="font-roboto font-light text-[14px] leading-[18px] text-black">
-            {role === 'emprendedor' 
+            {user?.user_metadata?.bio || (role === 'emprendedor' 
               ? 'Emprendimiento universitario enfocado en crecer y conectar con todos los estudiantes. 🚀' 
-              : 'Apoyando el talento universitario y descubriendo nuevos productos aquí en la U. 🎓'}
+              : 'Apoyando el talento universitario y descubriendo nuevos productos aquí en la U. 🎓')}
           </p>
         </div>
 
@@ -211,58 +227,69 @@ export default function Profile() {
               <div 
                 key={post.id} 
                 onClick={() => setSelectedPost(post)}
-                className="aspect-square w-full bg-gray-100 overflow-hidden group cursor-pointer"
+                className="aspect-square w-full bg-gray-50 overflow-hidden group cursor-pointer border-[0.5px] border-gray-100"
               >
                 <img 
                   src={post.imageUrl} 
                   alt={post.businessName} 
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
               </div>
             ))}
           </div>
         )}
 
+        {/* Persistent Bottom Nav - Mobile Only handled by BottomNav component */}
+        <div className="lg:hidden">
+          <BottomNav activeTab="profile" />
+        </div>
       </div>
-
-      {/* Persistent Bottom Nav */}
-      <div className="absolute bottom-0 left-0 w-full z-20">
-        <BottomNav activeTab="profile" />
-      </div>
+    </div>
 
       {/* Post Detail Overlay */}
       <AnimatePresence>
         {selectedPost && (
-          <motion.div 
-            initial={{ opacity: 0, x: '100%' }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: '100%' }}
-            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="absolute inset-0 bg-white z-50 flex flex-col"
-          >
-            {/* Header */}
-            <div className="flex items-center justify-between px-4 pt-10 pb-4 border-b border-gray-100">
-              <div className="flex items-center gap-4">
-                <button 
-                  onClick={() => setSelectedPost(null)}
-                  className="p-1 -ml-1 hover:bg-gray-100 rounded-full transition-colors"
-                >
-                  <ChevronLeft size={24} className="text-black" />
-                </button>
-                <div className="flex flex-col">
-                  <span className="font-roboto font-light text-[12px] text-grayText uppercase">Publicaciones</span>
-                  <span className="font-roboto font-bold text-[14px] text-black">{selectedPost.businessName}</span>
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedPost(null)}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200]"
+            />
+            {/* Panel */}
+            <motion.div 
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 40 }}
+              transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+              className="fixed inset-0 z-[210] flex items-center justify-center p-4"
+            >
+              <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-[500px] max-h-[90vh] flex flex-col overflow-hidden">
+                {/* Header */}
+                <div className="flex items-center gap-4 px-4 py-4 border-b border-gray-100 flex-shrink-0">
+                  <button 
+                    onClick={() => setSelectedPost(null)}
+                    className="p-1 -ml-1 hover:bg-gray-100 rounded-full transition-colors"
+                  >
+                    <ChevronLeft size={24} className="text-black" />
+                  </button>
+                  <div className="flex flex-col">
+                    <span className="font-roboto font-light text-[12px] text-grayText uppercase">Publicaciones</span>
+                    <span className="font-roboto font-bold text-[14px] text-black">{selectedPost.businessName}</span>
+                  </div>
+                </div>
+                {/* Scrollable Content */}
+                <div className="flex-1 overflow-y-auto w-full no-scrollbar">
+                  <ProductCard 
+                    {...selectedPost} 
+                    onDelete={() => setSelectedPost(null)}
+                  />
                 </div>
               </div>
-            </div>
-            {/* Scrollable Content */}
-            <div className="flex-1 overflow-y-auto w-full no-scrollbar pb-[40px]">
-              <ProductCard 
-                {...selectedPost} 
-                onDelete={() => setSelectedPost(null)}
-              />
-            </div>
-          </motion.div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
 

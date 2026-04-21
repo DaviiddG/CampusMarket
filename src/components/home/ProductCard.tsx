@@ -3,6 +3,7 @@ import { Heart, MessageCircle, Send, Bookmark, MoreVertical, Trash2, Edit2 } fro
 import { cn } from '@/lib/utils';
 import { useFeedContext } from '@/contexts/FeedContext';
 import { useAuthContext } from '@/contexts/AuthContext';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface ProductCardProps {
@@ -29,7 +30,7 @@ export default function ProductCard({
   onDelete
 }: ProductCardProps) {
   const { user } = useAuthContext();
-  const { likedPostIds, savedPostIds, toggleLike, toggleSave, deletePost, updatePost } = useFeedContext();
+  const { likedPostIds, savedPostIds, toggleLike, toggleSave, deletePost, updatePost, addComment, sharePost } = useFeedContext();
   const isLiked = likedPostIds.includes(id);
   const isSaved = savedPostIds.includes(id);
   
@@ -73,16 +74,22 @@ export default function ProductCard({
   return (
     <div className="w-full bg-white mb-6">
       <div className="flex items-center px-4 py-3 gap-3">
-        <div className="w-[38px] h-[38px] rounded-full overflow-hidden border border-gray-100 shadow-sm">
+        <Link 
+          to={isOwner ? "/profile" : `/user/${postOwnerId}`}
+          className="w-[38px] h-[38px] rounded-full overflow-hidden border border-gray-100 shadow-sm flex-shrink-0"
+        >
           <img 
             src={avatarUrl} 
             alt={businessName} 
             className="w-full h-full object-cover"
           />
-        </div>
-        <span className="font-roboto font-medium text-[14px] text-black flex-1">
+        </Link>
+        <Link 
+          to={isOwner ? "/profile" : `/user/${postOwnerId}`}
+          className="font-roboto font-medium text-[14px] text-black flex-1 hover:underline underline-offset-2"
+        >
           {businessName}
-        </span>
+        </Link>
         
         {isOwner && (
           <div className="relative">
@@ -172,10 +179,20 @@ export default function ProductCard({
               className={cn("transition-colors duration-300", isLiked ? "fill-red-500 text-red-500" : "text-black")} 
             />
           </motion.button>
-          <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }} className="text-black">
+          <motion.button 
+            whileHover={{ scale: 1.1 }} 
+            whileTap={{ scale: 0.95 }} 
+            className="text-black"
+            onClick={() => addComment(id, "¡Me interesa!")}
+          >
             <MessageCircle size={24} strokeWidth={2} />
           </motion.button>
-          <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }} className="text-black">
+          <motion.button 
+            whileHover={{ scale: 1.1 }} 
+            whileTap={{ scale: 0.95 }} 
+            className="text-black"
+            onClick={() => sharePost(id)}
+          >
             <Send size={24} strokeWidth={2} />
           </motion.button>
         </div>
@@ -202,7 +219,12 @@ export default function ProductCard({
           )}
         </p>
         <div className="font-roboto text-[14px] leading-[18px]">
-          <span className="font-medium mr-1">{businessName}</span>
+          <Link 
+            to={isOwner ? "/profile" : `/user/${postOwnerId}`}
+            className="font-medium mr-1 hover:underline"
+          >
+            {businessName}
+          </Link>
           <span className="font-light">{description}</span>
           <span className="font-bold ml-1 text-primary">{price}</span>
         </div>
@@ -264,61 +286,78 @@ export default function ProductCard({
         )}
       </AnimatePresence>
 
-      {/* Modern Edit Modal (Instagram Style) */}
+      {/* Premium Edit Modal (Instagram Style) */}
       <AnimatePresence>
         {showEditModal && (
-          <div className="fixed inset-0 z-[60] flex flex-col bg-white">
+          <div className="fixed inset-0 z-[60] flex flex-col bg-[#F9FAFB]">
             {/* Header */}
-            <div className="flex items-center justify-between px-4 h-14 border-b border-gray-100">
+            <div className="flex items-center justify-between px-4 h-16 bg-white border-b border-gray-100 sticky top-0 z-10">
               <button 
                 onClick={() => setShowEditModal(false)}
-                className="text-black font-roboto"
+                className="text-gray-500 font-roboto text-[15px] hover:text-black transition-colors"
               >
                 Cancelar
               </button>
-              <h3 className="font-roboto font-bold text-[16px]">Editar información</h3>
+              <h3 className="font-roboto font-bold text-[17px] text-[#102042]">Editar información</h3>
               <button 
                 onClick={handleUpdate}
                 disabled={isUpdating}
-                className="text-primary font-roboto font-bold disabled:opacity-50"
+                className="text-primary font-roboto font-bold text-[15px] disabled:opacity-50 active:scale-95 transition-transform"
               >
                 {isUpdating ? 'Guardando...' : 'Listo'}
               </button>
             </div>
 
             {/* Scrollable Content */}
-            <div className="flex-1 overflow-y-auto">
-              {/* Product Preview */}
-              <div className="flex items-start p-4 gap-4 border-b border-gray-50">
-                <div className="w-[80px] h-[80px] rounded-lg overflow-hidden bg-gray-100">
-                  <img src={imageUrl} className="w-full h-full object-cover" alt="Preview" />
+            <div className="flex-1 overflow-y-auto no-scrollbar pb-10">
+              <div className="max-w-xl mx-auto w-full px-4 pt-6 space-y-6">
+                
+                {/* Product Card Preview (Premium Look) */}
+                <div className="bg-white rounded-3xl p-4 shadow-sm border border-gray-100 flex items-center gap-5">
+                  <div className="w-[100px] h-[100px] rounded-2xl overflow-hidden shadow-inner flex-shrink-0">
+                    <img src={imageUrl} className="w-full h-full object-cover" alt="Preview" />
+                  </div>
+                  <div className="flex-1 space-y-2">
+                    <p className="text-[11px] font-bold text-gray-400 uppercase tracking-tight">Publicación Actual</p>
+                    <div className="relative">
+                      <span className="absolute left-0 top-1/2 -translate-y-1/2 text-primary font-bold text-lg">$</span>
+                      <input 
+                        type="text"
+                        value={editPrice}
+                        onChange={(e) => setEditPrice(e.target.value)}
+                        placeholder="0.00"
+                        className="w-full pl-5 text-[22px] font-roboto font-bold focus:outline-none text-primary bg-transparent"
+                      />
+                    </div>
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <label className="text-[12px] text-gray-400 font-roboto uppercase mb-1 block">Precio</label>
-                  <input 
-                    type="text"
-                    value={editPrice}
-                    onChange={(e) => setEditPrice(e.target.value)}
-                    placeholder="$0.00"
-                    className="w-full text-[16px] font-roboto font-bold focus:outline-none text-primary"
+
+                {/* Description Field */}
+                <div className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 space-y-3">
+                  <div className="flex justify-between items-center px-1">
+                    <label className="text-[12px] font-bold text-[#102042] uppercase">Pie de foto / Descripción</label>
+                    <span className={cn(
+                      "text-[10px] font-medium",
+                      editDescription.length > 200 ? "text-red-400" : "text-gray-300"
+                    )}>
+                      {editDescription.length}/250
+                    </span>
+                  </div>
+                  <textarea 
+                    value={editDescription}
+                    onChange={(e) => setEditDescription(e.target.value)}
+                    placeholder="Escribe algo increíble sobre tu producto..."
+                    rows={8}
+                    maxLength={250}
+                    className="w-full text-[15px] font-roboto font-light leading-relaxed focus:outline-none resize-none bg-transparent placeholder:text-gray-300"
                   />
                 </div>
-              </div>
 
-              {/* Description Field */}
-              <div className="p-4">
-                <label className="text-[12px] text-gray-400 font-roboto uppercase mb-2 block">Descripción</label>
-                <textarea 
-                  value={editDescription}
-                  onChange={(e) => setEditDescription(e.target.value)}
-                  placeholder="Escribe un pie de foto..."
-                  rows={6}
-                  className="w-full text-[14px] font-roboto font-light focus:outline-none resize-none"
-                />
-              </div>
-
-              <div className="p-4 bg-gray-50 text-[12px] text-gray-400 font-roboto">
-                Los cambios se verán reflejados inmediatamente en el feed de todos los usuarios.
+                <div className="px-6 py-4 bg-primary/5 rounded-2xl border border-primary/10">
+                  <p className="text-[12px] text-primary/70 font-roboto leading-tight text-center">
+                    Tus cambios se guardarán de forma segura y se verán reflejados inmediatamente en el feed de la comunidad.
+                  </p>
+                </div>
               </div>
             </div>
           </div>

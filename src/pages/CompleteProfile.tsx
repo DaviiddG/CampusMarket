@@ -1,17 +1,24 @@
-import { useState, useRef, type FormEvent } from 'react';
+import { useState, useRef, useEffect, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MobileContainer from '@/components/layout/MobileContainer';
-import { ChevronLeft, CheckCircle, Camera, User } from 'lucide-react';
+import { ChevronLeft, CheckCircle, Camera, User, MapPin, Instagram, Facebook, MessageCircle } from 'lucide-react';
 import { ShimmerButton } from '@/registry/magicui/shimmer-button';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
+
+import { motion, AnimatePresence } from 'motion/react';
 
 export default function CompleteProfile() {
   const navigate = useNavigate();
   const { user } = useAuthContext();
   
-  const [phone, setPhone] = useState('');
-  const [bio, setBio] = useState('');
+  const [phone, setPhone] = useState(user?.user_metadata?.phone_number || '');
+  const [bio, setBio] = useState(user?.user_metadata?.bio || '');
+  const [location, setLocation] = useState('');
+  const [instagram, setInstagram] = useState('');
+  const [facebook, setFacebook] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [showPasswordChange, setShowPasswordChange] = useState(false);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
@@ -19,6 +26,25 @@ export default function CompleteProfile() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const initialName = user?.user_metadata?.full_name || '';
+
+  // Load existing profile data from 'profiles' table
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from('profiles')
+      .select('bio, location, phone, instagram, facebook')
+      .eq('id', user.id)
+      .single()
+      .then(({ data }) => {
+        if (data) {
+          if (data.bio) setBio(data.bio);
+          if (data.location) setLocation(data.location);
+          if (data.phone) setPhone(data.phone);
+          if (data.instagram) setInstagram(data.instagram);
+          if (data.facebook) setFacebook(data.facebook);
+        }
+      });
+  }, [user]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -55,7 +81,7 @@ export default function CompleteProfile() {
         avatarUrl = publicData.publicUrl;
       }
       
-      // 2. Set the backend metadata
+      // 2. Set the backend auth metadata
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
       if (sessionError || !session) {
@@ -72,6 +98,32 @@ export default function CompleteProfile() {
       });
 
       if (error) throw error;
+
+      // 2.5 Upsert to profiles table (public data for other users)
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .upsert({
+          id: user!.id,
+          business_name: initialName,
+          bio,
+          location,
+          phone: `57${phone}`,
+          avatar_url: avatarUrl,
+          whatsapp: `57${phone}`,
+          instagram,
+          facebook,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'id' });
+
+      if (profileError) console.error('Profile table upsert error:', profileError);
+
+      // 2.6 Update Password if provided
+      if (newPassword.length >= 6) {
+        const { error: pwdError } = await supabase.auth.updateUser({
+          password: newPassword
+        });
+        if (pwdError) throw pwdError;
+      }
       
       // 3. Success flow
       localStorage.setItem('profileCompleted', 'true');
@@ -88,7 +140,7 @@ export default function CompleteProfile() {
   };
 
   return (
-    <MobileContainer className="bg-white relative overflow-hidden">
+    <MobileContainer className="bg-white relative overflow-hidden" showSidebars={false}>
       {success && (
         <div className="absolute inset-0 z-50 bg-white/90 backdrop-blur-sm flex flex-col items-center justify-center animate-in fade-in duration-500">
           <div className="bg-white p-8 rounded-full shadow-2xl mb-6 animate-bounce">
@@ -164,7 +216,9 @@ export default function CompleteProfile() {
           </div>
 
           <div className="space-y-1">
-            <label className="text-[11px] font-bold text-darkText/60 ml-1 uppercase">Número de Contacto (WhatsApp)</label>
+            <label className="text-[11px] font-bold text-darkText/60 ml-1 uppercase flex items-center gap-1">
+              <MessageCircle size={12} className="text-[#25D366]" /> WhatsApp
+            </label>
             <div className="flex gap-2">
               <span className="flex items-center justify-center bg-gray-100 rounded-xl px-3 font-medium text-darkText border-2 border-grayBase">
                 +57
@@ -176,6 +230,51 @@ export default function CompleteProfile() {
                 onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
                 maxLength={10}
                 required
+                className="minimalist-input flex-1"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-[11px] font-bold text-darkText/60 ml-1 uppercase flex items-center gap-1">
+              <MapPin size={12} className="text-primary" /> Ubicación
+            </label>
+            <input
+              type="text"
+              placeholder="Ej: Edificio L, Piso 2 - Universidad"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              className="minimalist-input"
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-[11px] font-bold text-darkText/60 ml-1 uppercase flex items-center gap-1">
+              <Instagram size={12} className="text-[#E1306C]" /> Instagram
+            </label>
+            <div className="flex items-center gap-1">
+              <span className="text-grayText text-sm">instagram.com/</span>
+              <input
+                type="text"
+                placeholder="tu_usuario"
+                value={instagram}
+                onChange={(e) => setInstagram(e.target.value.replace(/[^a-zA-Z0-9._]/g, ''))}
+                className="minimalist-input flex-1"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-[11px] font-bold text-darkText/60 ml-1 uppercase flex items-center gap-1">
+              <Facebook size={12} className="text-[#1877F2]" /> Facebook
+            </label>
+            <div className="flex items-center gap-1">
+              <span className="text-grayText text-sm">facebook.com/</span>
+              <input
+                type="text"
+                placeholder="tu_usuario_o_pagina"
+                value={facebook}
+                onChange={(e) => setFacebook(e.target.value.replace(/\s/g, ''))}
                 className="minimalist-input flex-1"
               />
             </div>
@@ -195,6 +294,39 @@ export default function CompleteProfile() {
             <div className="flex justify-end">
               <span className="text-[10px] text-grayText">{bio.length}/150</span>
             </div>
+          </div>
+
+          <div className="space-y-1 pt-2">
+            <button
+              type="button"
+              onClick={() => setShowPasswordChange(!showPasswordChange)}
+              className="text-xs font-bold text-primary uppercase flex items-center gap-1"
+            >
+              {showPasswordChange ? 'Cancelar cambio' : '¿Cambiar contraseña?'}
+            </button>
+            
+            <AnimatePresence>
+              {showPasswordChange && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  className="overflow-hidden space-y-1"
+                >
+                  <label className="text-[11px] font-bold text-darkText/60 ml-1 uppercase">Nueva Contraseña</label>
+                  <input
+                    type="password"
+                    placeholder="Mínimo 6 caracteres"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="minimalist-input"
+                  />
+                  {newPassword.length > 0 && newPassword.length < 6 && (
+                    <p className="text-[10px] text-red-500 ml-1">La contraseña es demasiado corta.</p>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           <div className="pt-8">

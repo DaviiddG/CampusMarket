@@ -22,6 +22,8 @@ interface FeedContextType {
   updatePost: (postId: string, data: { price: string; description: string }) => Promise<boolean>;
   toggleLike: (postId: string) => void;
   toggleSave: (postId: string) => void;
+  sharePost: (postId: string) => Promise<void>;
+  addComment: (postId: string, text: string) => Promise<void>;
   loading: boolean;
 }
 
@@ -172,6 +174,42 @@ export const FeedProvider = ({ children }: { children: ReactNode }) => {
       await supabase.from('likes').delete().eq('post_id', postId).eq('user_id', user.id);
     } else {
       await supabase.from('likes').insert({ post_id: postId, user_id: user.id });
+      
+      // TRIGGER NOTIFICATION
+      const post = posts.find(p => p.id === postId);
+      console.log('--- DEBUG NOTIFICATIONS ---');
+      console.log('Publicación:', postId);
+      console.log('Dueño del Post (Target):', post?.user_id);
+      console.log('Usuario actual (Actor):', user.id);
+      
+      try {
+        if (post && post.user_id !== user.id) {
+          console.log('Enviando notificación...');
+          const { error: notifError } = await supabase.from('notifications').insert({
+            user_id: post.user_id,
+            actor_id: user.id,
+            actor_name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Un usuario',
+            actor_avatar: user?.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/notionists/svg?seed=${user?.id}`,
+            type: 'like',
+            post_id: postId,
+            post_image: post.imageUrl
+          });
+
+          if (notifError) {
+            console.error('Error de Supabase al insertar:', notifError);
+            alert('Error al enviar notificación: ' + notifError.message);
+          } else {
+            console.log('✅ Notificación enviada con éxito');
+          }
+        } else if (post && post.user_id === user.id) {
+          console.log('ℹ️ Self-like: El usuario es el dueño del post, no se envía notificación.');
+        } else {
+          console.log('⚠️ No se encontró el post o el usuario.');
+        }
+      } catch (err) {
+        console.error('Crash inesperado en notificaciones:', err);
+      }
+      console.log('---------------------------');
     }
   };
 
@@ -247,8 +285,52 @@ export const FeedProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const sharePost = async (postId: string) => {
+    if (!user) return;
+    const post = posts.find(p => p.id === postId);
+    if (post && post.user_id !== user.id) {
+      await supabase.from('notifications').insert({
+        user_id: post.user_id,
+        actor_id: user.id,
+        actor_name: user?.user_metadata?.full_name || 'Alguien',
+        actor_avatar: user?.user_metadata?.avatar_url,
+        type: 'share',
+        post_id: postId,
+        post_image: post.imageUrl
+      });
+    }
+  };
+
+  const addComment = async (postId: string, _text: string) => {
+    if (!user) return;
+    const post = posts.find(p => p.id === postId);
+    if (post && post.user_id !== user.id) {
+      await supabase.from('notifications').insert({
+        user_id: post.user_id,
+        actor_id: user.id,
+        actor_name: user?.user_metadata?.full_name || 'Alguien',
+        actor_avatar: user?.user_metadata?.avatar_url,
+        type: 'comment',
+        post_id: postId,
+        post_image: post.imageUrl
+      });
+    }
+  };
+
   return (
-    <FeedContext.Provider value={{ posts, savedPostIds, likedPostIds, addPost, deletePost, updatePost, toggleLike, toggleSave, loading }}>
+    <FeedContext.Provider value={{ 
+      posts, 
+      savedPostIds, 
+      likedPostIds, 
+      addPost, 
+      deletePost, 
+      updatePost, 
+      toggleLike, 
+      toggleSave, 
+      sharePost,
+      addComment,
+      loading 
+    }}>
       {children}
     </FeedContext.Provider>
   );
