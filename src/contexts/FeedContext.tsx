@@ -21,6 +21,7 @@ export interface Review {
   created_at: string;
   reviewer_name?: string;
   reviewer_avatar?: string;
+  image_url?: string;
 }
 
 export interface Post {

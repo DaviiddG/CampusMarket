@@ -7,6 +7,8 @@ import { supabase } from '@/lib/supabase';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useFeedContext, type Review } from '@/contexts/FeedContext';
 import { cn } from '@/lib/utils';
+import ReviewsModal from '@/components/home/ReviewsModal';
+import { AnimatePresence } from 'motion/react';
 import { Marquee } from '@/components/ui/Marquee';
 
 export default function UserProfile() {
@@ -20,6 +22,7 @@ export default function UserProfile() {
   const [isFollowing, setIsFollowing] = useState(false);
   const [followersCount, setFollowersCount] = useState(0);
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [showReviewsModal, setShowReviewsModal] = useState(false);
   
   const userPosts = posts.filter(p => p.user_id === userId);
   const popular = userPosts.slice().reverse().slice(0, 4);
@@ -277,138 +280,163 @@ export default function UserProfile() {
               </div>
             </div>
           </div>
-          </div>
+          
+          {/* Sections */}
+          <div className="mt-8 space-y-10">
+            {/* Products */}
+            <section>
+              <div className="flex items-center justify-between px-6 mb-3">
+                <h3 className="font-roboto font-bold text-lg text-black">Productos</h3>
+                <button className="text-gray-400"><ChevronRight size={20} /></button>
+              </div>
+              <div className="grid grid-cols-3 gap-1 px-1">
+                {userPosts.map((post) => (
+                  <div key={post.id} className="aspect-square bg-gray-50 overflow-hidden cursor-pointer">
+                    <img src={post.imageUrl} className="w-full h-full object-cover" alt="Product" />
+                  </div>
+                ))}
+              </div>
+              {userPosts.length === 0 && <p className="text-gray-400 text-sm italic px-6">No hay productos.</p>}
+            </section>
 
-        {/* Sections */}
-        <div className="mt-8 space-y-10">
-          {/* Products */}
-          <section>
-            <div className="flex items-center justify-between px-6 mb-3">
-              <h3 className="font-roboto font-bold text-lg text-black">Productos</h3>
-              <button className="text-gray-400"><ChevronRight size={20} /></button>
-            </div>
-            <div className="grid grid-cols-3 gap-1 px-1">
-              {userPosts.map((post) => (
-                <div key={post.id} className="aspect-square bg-gray-50 overflow-hidden cursor-pointer">
-                  <img src={post.imageUrl} className="w-full h-full object-cover" alt="Product" />
+            {/* Populares */}
+            <section>
+              <div className="flex items-center justify-between px-6 mb-3">
+                <h3 className="font-roboto font-bold text-lg text-black">Populares</h3>
+                <button className="text-gray-400"><ChevronRight size={20} /></button>
+              </div>
+              <div className="grid grid-cols-3 gap-1 px-1">
+                {popular.map((post) => (
+                  <div key={post.id + '_popular'} className="aspect-square bg-gray-50 overflow-hidden cursor-pointer">
+                    <img src={post.imageUrl} className="w-full h-full object-cover" alt="Popular" />
+                  </div>
+                ))}
+              </div>
+              {popular.length === 0 && <p className="text-gray-400 text-sm italic px-6">No hay contenido popular.</p>}
+            </section>
+
+            {/* Reseñas */}
+            <section className="mb-10">
+              <button 
+                onClick={() => {
+                  if (reviews.length > 0) setShowReviewsModal(true);
+                }}
+                className="w-full flex items-center justify-between px-6 mb-3 text-left group"
+              >
+                <h3 className="font-roboto font-bold text-lg text-black group-hover:underline">Reseñas</h3>
+                <span className="text-[13px] text-gray-400 font-roboto">{reviews.length} reseñas</span>
+              </button>
+              
+              {reviews.length > 1 ? (
+                <div onClick={() => setShowReviewsModal(true)} className="cursor-pointer">
+                  <Marquee pauseOnHover className="[--duration:25s] [--gap:1rem]">
+                    {reviews.map((review) => (
+                      <div
+                        key={review.id}
+                        onClick={(e) => { e.stopPropagation(); setShowReviewsModal(true); }}
+                        className="w-[260px] flex-shrink-0 bg-gray-50 rounded-2xl p-4 border border-gray-100 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                      >
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className="w-9 h-9 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
+                            <img
+                              src={review.reviewer_avatar || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI0UyRThGMCIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNDAiIHI9IjIwIiBmaWxsPSIjOTRBM0I4Ii8+PHBhdGggZD0iTTIwIDEwMGEzMCAzMCAwIDAgMSA2MCAwIiBmaWxsPSIjOTRBM0I4Ii8+PC9zdmc+'}
+                              alt={review.reviewer_name}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-roboto font-medium text-[13px] text-black truncate">{review.reviewer_name || 'Usuario'}</p>
+                            <div className="flex gap-0.5">
+                              {[1, 2, 3, 4, 5].map(s => (
+                                <Star
+                                  key={s}
+                                  size={12}
+                                  className={s <= review.rating ? 'fill-yellow-400 text-yellow-400' : 'fill-gray-200 text-gray-200'}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                        {review.content && (
+                          <p className="font-roboto font-light text-[12px] text-gray-600 leading-relaxed line-clamp-3">
+                            {review.content}
+                          </p>
+                        )}
+                        <p className="text-[10px] text-gray-300 mt-2 font-roboto">
+                          {new Date(review.created_at).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        </p>
+                      </div>
+                    ))}
+                  </Marquee>
                 </div>
-              ))}
-            </div>
-            {userPosts.length === 0 && <p className="text-gray-400 text-sm italic px-6">No hay productos.</p>}
-          </section>
-
-          {/* Ofertas (now shows Popular content) */}
-          <section>
-            <div className="flex items-center justify-between px-6 mb-3">
-              <h3 className="font-roboto font-bold text-lg text-black">Populares</h3>
-              <button className="text-gray-400"><ChevronRight size={20} /></button>
-            </div>
-            <div className="grid grid-cols-3 gap-1 px-1">
-              {popular.map((post) => (
-                <div key={post.id + '_popular'} className="aspect-square bg-gray-50 overflow-hidden cursor-pointer">
-                  <img src={post.imageUrl} className="w-full h-full object-cover" alt="Popular" />
-                </div>
-              ))}
-            </div>
-            {popular.length === 0 && <p className="text-gray-400 text-sm italic px-6">No hay contenido popular.</p>}
-          </section>
-
-          {/* Reseñas with Marquee */}
-          <section>
-            <div className="flex items-center justify-between px-6 mb-3">
-              <h3 className="font-roboto font-bold text-lg text-black">Reseñas</h3>
-              <span className="text-[13px] text-gray-400 font-roboto">{reviews.length} reseñas</span>
-            </div>
-            {reviews.length > 1 ? (
-              <Marquee pauseOnHover className="[--duration:25s] [--gap:1rem]">
-                {reviews.map((review) => (
-                  <div
-                    key={review.id}
-                    className="w-[260px] flex-shrink-0 bg-gray-50 rounded-2xl p-4 border border-gray-100 shadow-sm hover:shadow-md transition-shadow"
-                  >
+              ) : reviews.length === 1 ? (
+                <div 
+                  className="px-6 cursor-pointer"
+                  onClick={() => setShowReviewsModal(true)}
+                >
+                  <div className="w-full bg-gray-50 rounded-2xl p-4 border border-gray-100 shadow-sm hover:bg-gray-100 transition-colors">
                     <div className="flex items-center gap-3 mb-3">
                       <div className="w-9 h-9 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
                         <img
-                          src={review.reviewer_avatar || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI0UyRThGMCIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNDAiIHI9IjIwIiBmaWxsPSIjOTRBM0I4Ii8+PHBhdGggZD0iTTIwIDEwMGEzMCAzMCAwIDAgMSA2MCAwIiBmaWxsPSIjOTRBM0I4Ii8+PC9zdmc+'}
-                          alt={review.reviewer_name}
+                          src={reviews[0].reviewer_avatar || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI0UyRThGMCIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNDAiIHI9IjIwIiBmaWxsPSIjOTRBM0I4Ii8+PHBhdGggZD0iTTIwIDEwMGEzMCAzMCAwIDAgMSA2MCAwIiBmaWxsPSIjOTRBM0I4Ii8+PC9zdmc+'}
+                          alt={reviews[0].reviewer_name}
                           className="w-full h-full object-cover"
                         />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-roboto font-medium text-[13px] text-black truncate">{review.reviewer_name}</p>
+                        <p className="font-roboto font-medium text-[13px] text-black truncate">{reviews[0].reviewer_name || 'Usuario'}</p>
                         <div className="flex gap-0.5">
                           {[1, 2, 3, 4, 5].map(s => (
                             <Star
                               key={s}
                               size={12}
-                              className={s <= review.rating ? 'fill-yellow-400 text-yellow-400' : 'fill-gray-200 text-gray-200'}
+                              className={s <= reviews[0].rating ? 'fill-yellow-400 text-yellow-400' : 'fill-gray-200 text-gray-200'}
                             />
                           ))}
                         </div>
                       </div>
                     </div>
-                    {review.content && (
-                      <p className="font-roboto font-light text-[12px] text-gray-600 leading-relaxed line-clamp-3">
-                        {review.content}
+                    {reviews[0].content && (
+                      <p className="font-roboto font-light text-[13px] text-gray-600 leading-relaxed">
+                        {reviews[0].content}
                       </p>
                     )}
                     <p className="text-[10px] text-gray-300 mt-2 font-roboto">
-                      {new Date(review.created_at).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      {new Date(reviews[0].created_at).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </p>
                   </div>
-                ))}
-              </Marquee>
-            ) : reviews.length === 1 ? (
-              <div className="px-6">
-                <div className="w-full bg-gray-50 rounded-2xl p-4 border border-gray-100 shadow-sm">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-9 h-9 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
-                      <img
-                        src={reviews[0].reviewer_avatar || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI0UyRThGMCIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNDAiIHI9IjIwIiBmaWxsPSIjOTRBM0I4Ii8+PHBhdGggZD0iTTIwIDEwMGEzMCAzMCAwIDAgMSA2MCAwIiBmaWxsPSIjOTRBM0I4Ii8+PC9zdmc+'}
-                        alt={reviews[0].reviewer_name}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-roboto font-medium text-[13px] text-black truncate">{reviews[0].reviewer_name}</p>
-                      <div className="flex gap-0.5">
-                        {[1, 2, 3, 4, 5].map(s => (
-                          <Star
-                            key={s}
-                            size={12}
-                            className={s <= reviews[0].rating ? 'fill-yellow-400 text-yellow-400' : 'fill-gray-200 text-gray-200'}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                  {reviews[0].content && (
-                    <p className="font-roboto font-light text-[13px] text-gray-600 leading-relaxed">
-                      {reviews[0].content}
-                    </p>
-                  )}
-                  <p className="text-[10px] text-gray-300 mt-2 font-roboto">
-                    {new Date(reviews[0].created_at).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' })}
-                  </p>
                 </div>
-              </div>
-            ) : (
-              <div className="px-6 py-8 text-center">
-                <Star size={32} className="mx-auto mb-2 text-gray-200" />
-                <p className="text-gray-400 text-sm font-roboto">Aún no hay reseñas para este negocio.</p>
-                <button
-                  onClick={() => navigate(`/review/${userId}`)}
-                  className="mt-3 text-primary text-sm font-roboto font-bold hover:underline"
-                >
-                  ¡Sé el primero en dejar una!
-                </button>
-              </div>
-            )}
-          </section>
+              ) : (
+                <div className="px-6 py-8 text-center bg-gray-50/50 mx-6 rounded-2xl border border-gray-100 border-dashed">
+                  <Star size={24} className="mx-auto mb-2 text-gray-300" />
+                  <p className="text-gray-400 text-sm font-roboto mb-4">Aún no hay reseñas para este negocio.</p>
+                  <button
+                    onClick={() => navigate(`/review/${userId}`)}
+                    className="px-4 py-2 bg-blue-500 text-white rounded-full font-roboto font-medium text-sm hover:bg-blue-600 transition-colors"
+                  >
+                    Dejar la primera reseña
+                  </button>
+                </div>
+              )}
+            </section>
+          </div>
         </div>
       </div>
+      
+      {/* Nav */}
+      <BottomNav activeTab="profile" />
 
-      <BottomNav />
+      {/* Reviews Modal Integration */}
+      <AnimatePresence>
+        {showReviewsModal && (
+          <ReviewsModal
+            isOpen={showReviewsModal}
+            onClose={() => setShowReviewsModal(false)}
+            reviews={reviews}
+            targetName={targetUser?.businessName || 'Usuario'}
+          />
+        )}
+      </AnimatePresence>
     </MobileContainer>
   );
 }
