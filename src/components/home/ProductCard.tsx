@@ -154,6 +154,7 @@ export default function ProductCard({
             src={avatarUrl} 
             alt={businessName} 
             className="w-full h-full object-cover"
+            onError={(e) => { (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/notionists/svg?seed=${businessName}`; }}
           />
         </Link>
         <Link 
@@ -340,7 +341,8 @@ export default function ProductCard({
                         <img 
                           src={comment.user_avatar || `https://api.dicebear.com/7.x/notionists/svg?seed=${comment.user_name}`} 
                           alt="" 
-                          className="w-full h-full object-cover" 
+                          className="w-full h-full object-cover"
+                          onError={(e) => { (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/notionists/svg?seed=${comment.user_name}`; }}
                         />
                       </div>
                       <div className="flex-1 min-w-0">
@@ -374,6 +376,7 @@ export default function ProductCard({
                     src={user?.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/notionists/svg?seed=${user?.id}`}
                     alt="" 
                     className="w-full h-full object-cover"
+                    onError={(e) => { (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/notionists/svg?seed=${user?.id}`; }}
                   />
                 </div>
                 <input
