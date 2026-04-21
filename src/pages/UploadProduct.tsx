@@ -6,6 +6,8 @@ import { useFeedContext } from '@/contexts/FeedContext';
 import { X, Check, ImagePlus } from 'lucide-react';
 import { motion } from 'motion/react';
 import { supabase } from '@/lib/supabase';
+import Cropper from 'react-easy-crop';
+import { getCroppedImg } from '@/lib/canvasUtils';
 
 export default function UploadProduct() {
   const navigate = useNavigate();
@@ -18,6 +20,10 @@ export default function UploadProduct() {
   const [type, setType] = useState('');
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+  
   const [isUploading, setIsUploading] = useState(false);
   const [profileAvatar, setProfileAvatar] = useState<string | null>(null);
 
@@ -54,16 +60,25 @@ export default function UploadProduct() {
     const file = e.target.files?.[0];
     if (file) {
       setImageFile(file);
-      const url = URL.createObjectURL(file);
-      setImagePreview(url);
+      const reader = new FileReader();
+      reader.onload = () => {
+        setImagePreview(reader.result as string);
+        setCrop({ x: 0, y: 0 });
+        setZoom(1);
+      };
+      reader.readAsDataURL(file);
     }
+  };
+
+  const onCropComplete = (_croppedArea: any, croppedAreaPixels: any) => {
+    setCroppedAreaPixels(croppedAreaPixels);
   };
 
   const { addPost } = useFeedContext();
 
   const handleUpload = async () => {
     // Basic validation
-    if (!description || !category || !type || !imageFile || !price) {
+    if (!description || !category || !type || !imagePreview || !price) {
       alert('Por favor completa todos los campos (incluyendo el precio) y sube una imagen.');
       return;
     }
@@ -71,11 +86,27 @@ export default function UploadProduct() {
     setIsUploading(true);
 
     try {
+      let uploadFile: File | null = imageFile;
+      
+      // If the user cropped the image, generate the final cropped blob
+      if (imagePreview && croppedAreaPixels) {
+        try {
+          const croppedBlob = await getCroppedImg(imagePreview, croppedAreaPixels);
+          if (croppedBlob) {
+            uploadFile = croppedBlob;
+          }
+        } catch (e) {
+          console.error("Error al procesar el recorte de la imagen", e);
+        }
+      }
+
+      if (!uploadFile) throw new Error("No hay archivo de imagen válido para subir.");
+
       // 1. Upload to Supabase Storage
-      const fileName = `posts/${Date.now()}-${imageFile.name}`;
+      const fileName = `posts/${Date.now()}-cropped.jpeg`;
       const { error: uploadError } = await supabase.storage
         .from('product-images')
-        .upload(fileName, imageFile);
+        .upload(fileName, uploadFile);
 
       if (uploadError) throw uploadError;
 
@@ -194,8 +225,8 @@ export default function UploadProduct() {
 
           {/* Image Upload Area - Full Width in container */}
           <div 
-            className="w-full h-[400px] bg-gray-50 border-y lg:border lg:rounded-3xl border-gray-100 relative mb-8 cursor-pointer overflow-hidden flex items-center justify-center group hover:bg-gray-100 transition-all"
-            onClick={() => fileInputRef.current?.click()}
+            className={`w-full h-[400px] bg-gray-50 border-y lg:border lg:rounded-3xl border-gray-100 relative mb-8 overflow-hidden flex items-center justify-center group transition-all ${!imagePreview ? 'cursor-pointer hover:bg-gray-100' : ''}`}
+            onClick={() => { if (!imagePreview) fileInputRef.current?.click() }}
           >
             <input 
               type="file" 
@@ -206,12 +237,28 @@ export default function UploadProduct() {
             />
             
             {imagePreview ? (
-              <>
-                <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <span className="bg-white/90 px-4 py-2 rounded-full text-sm font-bold shadow-lg">Cambiar foto</span>
+              <div className="relative w-full h-full">
+                <Cropper
+                  image={imagePreview}
+                  crop={crop}
+                  zoom={zoom}
+                  aspect={1}
+                  onCropChange={setCrop}
+                  onCropComplete={onCropComplete}
+                  onZoomChange={setZoom}
+                />
+                <div className="absolute bottom-4 left-0 right-0 flex justify-center z-10 scale-0 group-hover:scale-100 transition-transform">
+                  <span 
+                    className="bg-white/90 px-4 py-2 rounded-full text-sm font-bold shadow-lg cursor-pointer"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      fileInputRef.current?.click();
+                    }}
+                  >
+                    Cambiar foto
+                  </span>
                 </div>
-              </>
+              </div>
             ) : (
               <div className="flex flex-col items-center gap-3 text-gray-400 group-hover:text-primary transition-colors">
                 <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-sm">
