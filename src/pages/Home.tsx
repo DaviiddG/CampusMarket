@@ -107,9 +107,7 @@ export default function Home() {
       </div>
 
       {/* Persistent Bottom Nav */}
-      <div className="absolute bottom-0 left-0 w-full z-20">
-        <BottomNav activeTab="home" />
-      </div>
+      <BottomNav activeTab="home" />
     </MobileContainer>
   );
 }

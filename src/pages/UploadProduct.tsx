@@ -197,7 +197,7 @@ export default function UploadProduct() {
           </div>
 
           {/* Selects Area */}
-          <div className="w-full px-6 flex flex-col md:flex-row gap-4 mb-10">
+          <div className="w-full px-6 flex flex-row gap-4 mb-10">
             {/* Category */}
             <div className="flex-1 relative">
               <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1 ml-1">Categoría</label>
@@ -235,8 +235,8 @@ export default function UploadProduct() {
             </div>
           </div>
 
-          {/* Buttons Area */}
-          <div className="w-full flex flex-col md:flex-row justify-center gap-4 px-6 pb-10">
+          {/* Buttons Area - Always horizontal to match PC design */}
+          <div className="w-full flex flex-row justify-center gap-4 px-6 pb-10">
             <motion.button 
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}

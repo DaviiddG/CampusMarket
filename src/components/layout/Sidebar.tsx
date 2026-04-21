@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Home, PlusSquare, Bell, LogOut, Compass } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -10,6 +11,19 @@ export default function Sidebar() {
   const location = useLocation();
   const { unreadCount, markAllAsRead } = useNotificationContext();
   const { user } = useAuthContext();
+  const [profileAvatar, setProfileAvatar] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from('profiles')
+      .select('avatar_url')
+      .eq('id', user.id)
+      .single()
+      .then(({ data }) => {
+        if (data?.avatar_url) setProfileAvatar(data.avatar_url);
+      });
+  }, [user]);
 
   const navItems = [
     { label: 'Inicio', icon: Home, path: '/home' },
@@ -31,7 +45,7 @@ export default function Sidebar() {
     await supabase.auth.signOut();
   };
 
-  const userAvatar = user?.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/notionists/svg?seed=${user?.id}`;
+  const userAvatar = profileAvatar || user?.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/notionists/svg?seed=${user?.id}`;
 
   return (
     <aside className="hidden lg:flex flex-col w-[245px] h-screen border-r border-gray-100 bg-white px-3 py-8 sticky top-0 flex-shrink-0 z-50">

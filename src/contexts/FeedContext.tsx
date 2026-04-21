@@ -2,6 +2,27 @@ import { createContext, useContext, useState, useEffect, type ReactNode } from '
 import { supabase } from '@/lib/supabase';
 import { useAuthContext } from '@/contexts/AuthContext';
 
+export interface Comment {
+  id: string;
+  post_id: string;
+  user_id: string;
+  content: string;
+  created_at: string;
+  user_name?: string;
+  user_avatar?: string;
+}
+
+export interface Review {
+  id: string;
+  target_user_id: string;
+  reviewer_id: string;
+  rating: number;
+  content: string;
+  created_at: string;
+  reviewer_name?: string;
+  reviewer_avatar?: string;
+}
+
 export interface Post {
   id: string;
   user_id: string;
@@ -10,7 +31,7 @@ export interface Post {
   imageUrl: string;
   price: string;
   description: string;
-  likes: number;     // This will be computed from the `likes` table
+  likes: number;
 }
 
 interface FeedContextType {
@@ -22,8 +43,12 @@ interface FeedContextType {
   updatePost: (postId: string, data: { price: string; description: string }) => Promise<boolean>;
   toggleLike: (postId: string) => void;
   toggleSave: (postId: string) => void;
-  sharePost: (postId: string) => Promise<void>;
-  addComment: (postId: string, text: string) => Promise<void>;
+  sharePost: (postId: string) => Promise<boolean>;
+  addComment: (postId: string, text: string) => Promise<boolean>;
+  deleteComment: (commentId: string) => Promise<boolean>;
+  getComments: (postId: string) => Promise<Comment[]>;
+  addReview: (targetUserId: string, rating: number, content: string) => Promise<boolean>;
+  getReviews: (targetUserId: string) => Promise<Review[]>;
   loading: boolean;
 }
 
@@ -36,11 +61,9 @@ export const FeedProvider = ({ children }: { children: ReactNode }) => {
   const [likedPostIds, setLikedPostIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Initial Fetch logic
   useEffect(() => {
     fetchPostsAndInteractions();
 
-    // 4. Realtime Subscription
     const channel = supabase
       .channel('public:posts')
       .on(
@@ -97,7 +120,6 @@ export const FeedProvider = ({ children }: { children: ReactNode }) => {
   const fetchPostsAndInteractions = async () => {
     setLoading(true);
     try {
-      // 1. Fetch Posts
       const { data: postsData, error: postsError } = await supabase
         .from('posts')
         .select('*')
@@ -105,7 +127,6 @@ export const FeedProvider = ({ children }: { children: ReactNode }) => {
 
       if (postsError) throw postsError;
 
-      // Ensure mapping from DB schema to frontend interface
       const activePosts: Post[] = (postsData || []).map(p => ({
         id: p.id,
         user_id: p.user_id,
@@ -114,10 +135,9 @@ export const FeedProvider = ({ children }: { children: ReactNode }) => {
         imageUrl: p.image_url,
         price: p.price,
         description: p.description,
-        likes: 0 // Will apply counting next
+        likes: 0
       }));
 
-      // 2. Compute Likes for all posts (if likes table is populated)
       const { data: allLikes } = await supabase.from('likes').select('post_id, user_id');
       
       const likesCountMap: Record<string, number> = {};
@@ -130,12 +150,10 @@ export const FeedProvider = ({ children }: { children: ReactNode }) => {
         }
       });
 
-      // Assign counts
       activePosts.forEach(post => {
         post.likes = likesCountMap[post.id] || 0;
       });
 
-      // 3. Saved Posts for the current user
       const userSavedSet = new Set<string>();
       if (user) {
         const { data: savedData } = await supabase
@@ -150,14 +168,13 @@ export const FeedProvider = ({ children }: { children: ReactNode }) => {
       setLikedPostIds(Array.from(userLikedSet));
       setSavedPostIds(Array.from(userSavedSet));
     } catch (e) {
-      console.error('Error fetching feed data from Supabase. Check if tables (posts, likes, saved_posts) exist:', e);
+      console.error('Error fetching feed data:', e);
     } finally {
       setLoading(false);
     }
   };
 
   const addPost = (post: Post) => {
-    // When a post is added directly from the UI, we place it smoothly without re-rendering everything.
     setPosts(prev => [post, ...prev]);
   };
 
@@ -165,62 +182,34 @@ export const FeedProvider = ({ children }: { children: ReactNode }) => {
     if (!user) return;
     const isLiked = likedPostIds.includes(postId);
 
-    // Optimistic UI update
     setLikedPostIds(prev => isLiked ? prev.filter(id => id !== postId) : [...prev, postId]);
     setPosts(currentPosts => currentPosts.map(p => p.id === postId ? { ...p, likes: isLiked ? Math.max(0, p.likes - 1) : p.likes + 1 } : p));
 
-    // Backend update
     if (isLiked) {
       await supabase.from('likes').delete().eq('post_id', postId).eq('user_id', user.id);
     } else {
       await supabase.from('likes').insert({ post_id: postId, user_id: user.id });
       
-      // TRIGGER NOTIFICATION
       const post = posts.find(p => p.id === postId);
-      console.log('--- DEBUG NOTIFICATIONS ---');
-      console.log('Publicación:', postId);
-      console.log('Dueño del Post (Target):', post?.user_id);
-      console.log('Usuario actual (Actor):', user.id);
-      
-      try {
-        if (post && post.user_id !== user.id) {
-          console.log('Enviando notificación...');
-          const { error: notifError } = await supabase.from('notifications').insert({
-            user_id: post.user_id,
-            actor_id: user.id,
-            actor_name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Un usuario',
-            actor_avatar: user?.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/notionists/svg?seed=${user?.id}`,
-            type: 'like',
-            post_id: postId,
-            post_image: post.imageUrl
-          });
-
-          if (notifError) {
-            console.error('Error de Supabase al insertar:', notifError);
-            alert('Error al enviar notificación: ' + notifError.message);
-          } else {
-            console.log('✅ Notificación enviada con éxito');
-          }
-        } else if (post && post.user_id === user.id) {
-          console.log('ℹ️ Self-like: El usuario es el dueño del post, no se envía notificación.');
-        } else {
-          console.log('⚠️ No se encontró el post o el usuario.');
-        }
-      } catch (err) {
-        console.error('Crash inesperado en notificaciones:', err);
+      if (post && post.user_id !== user.id) {
+        await supabase.from('notifications').insert({
+          user_id: post.user_id,
+          actor_id: user.id,
+          actor_name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Un usuario',
+          actor_avatar: user?.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/notionists/svg?seed=${user?.id}`,
+          type: 'like',
+          post_id: postId,
+          post_image: post.imageUrl
+        });
       }
-      console.log('---------------------------');
     }
   };
 
   const toggleSave = async (postId: string) => {
     if (!user) return;
     const isSaved = savedPostIds.includes(postId);
-
-    // Optimistic UI update
     setSavedPostIds(prev => isSaved ? prev.filter(id => id !== postId) : [...prev, postId]);
 
-    // Backend update
     if (isSaved) {
       await supabase.from('saved_posts').delete().eq('post_id', postId).eq('user_id', user.id);
     } else {
@@ -230,53 +219,22 @@ export const FeedProvider = ({ children }: { children: ReactNode }) => {
 
   const deletePost = async (postId: string) => {
     if (!user) return false;
-    
     try {
-      // 1. Delete from Supabase
-      const { data: deletedRows, error } = await supabase
-        .from('posts')
-        .delete()
-        .eq('id', postId)
-        .eq('user_id', user.id)
-        .select();
-
+      const { error } = await supabase.from('posts').delete().eq('id', postId).eq('user_id', user.id);
       if (error) throw error;
-
-      // Verify if anything was actually deleted
-      if (!deletedRows || deletedRows.length === 0) {
-        console.warn(`No rows deleted for ID ${postId}. User ID: ${user.id}`);
-        alert('No se pudo borrar: No eres el dueño o no tienes permisos (RLS). Ejecuta el script SQL robusto.');
-        return false;
-      }
-
-      console.log('Post deleted successfully from DB:', deletedRows[0]);
-
-      // 2. Optimistic UI update: remove from local state
       setPosts(prev => prev.filter(p => p.id !== postId));
       return true;
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error deleting post:', error);
-      alert(`No se pudo eliminar la publicación: ${error.message || 'Error de permisos (RLS)'}. Verifica que seas el dueño y hayas ejecutado el script SQL.`);
       return false;
     }
   };
 
   const updatePost = async (postId: string, data: { price: string; description: string }) => {
     if (!user) return false;
-
     try {
-      const { error } = await supabase
-        .from('posts')
-        .update({
-          price: data.price,
-          description: data.description
-        })
-        .eq('id', postId)
-        .eq('user_id', user.id);
-
+      const { error } = await supabase.from('posts').update({ price: data.price, description: data.description }).eq('id', postId).eq('user_id', user.id);
       if (error) throw error;
-
-      // Optimistic UI update
       setPosts(prev => prev.map(p => p.id === postId ? { ...p, ...data } : p));
       return true;
     } catch (error) {
@@ -286,9 +244,12 @@ export const FeedProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const sharePost = async (postId: string) => {
-    if (!user) return;
+    if (!user) return false;
     const post = posts.find(p => p.id === postId);
-    if (post && post.user_id !== user.id) {
+    if (!post) return false;
+
+    // Trigger Notification for sharing
+    if (post.user_id !== user.id) {
       await supabase.from('notifications').insert({
         user_id: post.user_id,
         actor_id: user.id,
@@ -299,37 +260,201 @@ export const FeedProvider = ({ children }: { children: ReactNode }) => {
         post_image: post.imageUrl
       });
     }
+    return true;
   };
 
-  const addComment = async (postId: string, _text: string) => {
-    if (!user) return;
-    const post = posts.find(p => p.id === postId);
-    if (post && post.user_id !== user.id) {
+  const getComments = async (postId: string): Promise<Comment[]> => {
+    try {
+      const { data, error } = await supabase
+        .from('comments')
+        .select('*')
+        .eq('post_id', postId)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        const userIds = Array.from(new Set(data.map(c => c.user_id)));
+
+        // Check profiles table first
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('id, business_name, avatar_url')
+          .in('id', userIds);
+
+        const profileMap: Record<string, { business_name?: string; avatar_url?: string }> = {};
+        (profileData || []).forEach(p => { profileMap[p.id] = p; });
+
+        // Fallback: check posts table for users not found in profiles
+        const missingIds = userIds.filter(uid => !profileMap[uid]?.business_name);
+        if (missingIds.length > 0) {
+          const { data: postData } = await supabase
+            .from('posts')
+            .select('user_id, business_name, avatar_url')
+            .in('user_id', missingIds);
+
+          (postData || []).forEach(p => {
+            if (!profileMap[p.user_id]?.business_name) {
+              profileMap[p.user_id] = { business_name: p.business_name, avatar_url: p.avatar_url };
+            }
+          });
+        }
+
+        // Final fallback: use current user's auth metadata if this is the logged-in user
+        const stillMissing = userIds.filter(uid => !profileMap[uid]?.business_name);
+        if (user && stillMissing.includes(user.id)) {
+          profileMap[user.id] = {
+            business_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Alguien',
+            avatar_url: user.user_metadata?.avatar_url || profileMap[user.id]?.avatar_url
+          };
+        }
+
+        return data.map(c => ({
+          ...c,
+          user_name: profileMap[c.user_id]?.business_name || 'Alguien',
+          user_avatar: profileMap[c.user_id]?.avatar_url
+        }));
+      }
+
+      return data || [];
+    } catch (e) {
+      console.error('Error fetching comments:', e);
+      return [];
+    }
+  };
+
+  const addComment = async (postId: string, text: string) => {
+    if (!user || !text.trim()) return false;
+    
+    try {
+      const { error } = await supabase.from('comments').insert({
+        post_id: postId,
+        user_id: user.id,
+        content: text.trim()
+      });
+
+      if (error) throw error;
+
+      // After successful comment, send notification
+      const post = posts.find(p => p.id === postId);
+      if (post && post.user_id !== user.id) {
+        await supabase.from('notifications').insert({
+          user_id: post.user_id,
+          actor_id: user.id,
+          actor_name: user?.user_metadata?.full_name || 'Alguien',
+          actor_avatar: user?.user_metadata?.avatar_url,
+          type: 'comment',
+          post_id: postId,
+          post_image: post.imageUrl
+        });
+      }
+      return true;
+    } catch (e) {
+      console.error('Error adding comment:', e);
+      return false;
+    }
+  };
+
+  const deleteComment = async (commentId: string) => {
+    if (!user) return false;
+    try {
+      const { error } = await supabase.from('comments').delete().eq('id', commentId);
+      if (error) throw error;
+      return true;
+    } catch (e) {
+      console.error('Error deleting comment:', e);
+      return false;
+    }
+  };
+
+  const addReview = async (targetUserId: string, rating: number, content: string) => {
+    if (!user) return false;
+    try {
+      const { error } = await supabase.from('reviews').insert({
+        target_user_id: targetUserId,
+        reviewer_id: user.id,
+        rating,
+        content
+      });
+
+      if (error) throw error;
+
       await supabase.from('notifications').insert({
-        user_id: post.user_id,
+        user_id: targetUserId,
         actor_id: user.id,
         actor_name: user?.user_metadata?.full_name || 'Alguien',
         actor_avatar: user?.user_metadata?.avatar_url,
-        type: 'comment',
-        post_id: postId,
-        post_image: post.imageUrl
+        type: 'follow',
       });
+
+      return true;
+    } catch (e) {
+      console.error('Error adding review:', e);
+      return false;
+    }
+  };
+
+  const getReviews = async (targetUserId: string): Promise<Review[]> => {
+    try {
+      const { data, error } = await supabase
+        .from('reviews')
+        .select('*')
+        .eq('target_user_id', targetUserId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        const reviewerIds = Array.from(new Set(data.map(r => r.reviewer_id)));
+
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('id, business_name, avatar_url')
+          .in('id', reviewerIds);
+
+        const profileMap: Record<string, { business_name?: string; avatar_url?: string }> = {};
+        (profileData || []).forEach(p => { profileMap[p.id] = p; });
+
+        // Fallback to posts table
+        const missingIds = reviewerIds.filter(uid => !profileMap[uid]?.business_name);
+        if (missingIds.length > 0) {
+          const { data: postData } = await supabase
+            .from('posts')
+            .select('user_id, business_name, avatar_url')
+            .in('user_id', missingIds);
+          (postData || []).forEach(p => {
+            if (!profileMap[p.user_id]?.business_name) {
+              profileMap[p.user_id] = { business_name: p.business_name, avatar_url: p.avatar_url };
+            }
+          });
+        }
+
+        // Final fallback: current user's auth metadata
+        const stillMissing2 = reviewerIds.filter(uid => !profileMap[uid]?.business_name);
+        if (user && stillMissing2.includes(user.id)) {
+          profileMap[user.id] = {
+            business_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Alguien',
+            avatar_url: user.user_metadata?.avatar_url || profileMap[user.id]?.avatar_url
+          };
+        }
+
+        return data.map(r => ({
+          ...r,
+          reviewer_name: profileMap[r.reviewer_id]?.business_name || 'Alguien',
+          reviewer_avatar: profileMap[r.reviewer_id]?.avatar_url
+        }));
+      }
+
+      return data || [];
+    } catch (e) {
+      console.error('Error fetching reviews:', e);
+      return [];
     }
   };
 
   return (
     <FeedContext.Provider value={{ 
-      posts, 
-      savedPostIds, 
-      likedPostIds, 
-      addPost, 
-      deletePost, 
-      updatePost, 
-      toggleLike, 
-      toggleSave, 
-      sharePost,
-      addComment,
-      loading 
+      posts, savedPostIds, likedPostIds, addPost, deletePost, updatePost, toggleLike, toggleSave, sharePost, addComment, deleteComment, getComments, addReview, getReviews, loading 
     }}>
       {children}
     </FeedContext.Provider>
@@ -338,8 +463,6 @@ export const FeedProvider = ({ children }: { children: ReactNode }) => {
 
 export const useFeedContext = () => {
   const context = useContext(FeedContext);
-  if (context === undefined) {
-    throw new Error('useFeedContext must be used within a FeedProvider');
-  }
+  if (context === undefined) throw new Error('useFeedContext must be used within a FeedProvider');
   return context;
 };

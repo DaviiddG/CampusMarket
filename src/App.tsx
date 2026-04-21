@@ -12,6 +12,7 @@ import Profile from './pages/Profile'
 import CompleteProfile from './pages/CompleteProfile'
 import UploadProduct from './pages/UploadProduct'
 import UserProfile from './pages/UserProfile'
+import LeaveReview from './pages/LeaveReview'
 
 function AppRoutes() {
   const { session, loading } = useAuthContext();
@@ -44,6 +45,7 @@ function AppRoutes() {
       <Route path="/profile" element={<RequireOnboarding><Profile /></RequireOnboarding>} />
       <Route path="/user/:userId" element={<RequireOnboarding><UserProfile /></RequireOnboarding>} />
       <Route path="/upload" element={<RequireOnboarding><UploadProduct /></RequireOnboarding>} />
+      <Route path="/review/:userId" element={<RequireOnboarding><LeaveReview /></RequireOnboarding>} />
       
       {/* Interstitial routes that require session but not full onboarding */}
       <Route path="/personalization" element={session ? <Personalization /> : <Navigate to="/auth-portal" replace />} />
