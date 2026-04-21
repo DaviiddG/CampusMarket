@@ -6,7 +6,6 @@ import { ShimmerButton } from '@/registry/magicui/shimmer-button';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 
-import { useAuth } from '@/hooks/useAuth';
 import { motion, AnimatePresence } from 'motion/react';
 
 export default function CompleteProfile() {
