@@ -129,7 +129,7 @@ export default function UserProfile() {
             user_id: userId,
             actor_id: currentUser.id,
             actor_name: currentUser.user_metadata?.full_name || currentUser.email?.split('@')[0] || 'Un usuario',
-            actor_avatar: currentUser.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/notionists/svg?seed=${currentUser.id}`,
+            actor_avatar: currentUser.user_metadata?.avatar_url || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y',
             type: 'follow'
           });
 
@@ -178,13 +178,12 @@ export default function UserProfile() {
             {/* Avatar */}
             <div className="w-24 h-24 lg:w-40 lg:h-40 rounded-full overflow-hidden border-[3px] border-primary/10 shadow-lg flex-shrink-0">
               <img 
-                src={targetUser?.avatarUrl || `https://api.dicebear.com/7.x/notionists/svg?seed=${targetUser?.businessName}`} 
-                alt={targetUser?.businessName} 
+                src={targetUser?.avatarUrl || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y'} 
+                alt="Profile Avatar" 
                 className="w-full h-full object-cover"
+                onError={(e) => { (e.target as HTMLImageElement).src = 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y'; }}
               />
             </div>
-
-            {/* Info Content */}
             <div className="flex-1 flex flex-col items-center lg:items-start">
               <div className="flex flex-col lg:flex-row items-center gap-4 lg:gap-6 mb-6">
                 <h2 className="text-xl lg:text-2xl font-roboto font-bold text-black">{targetUser?.businessName}</h2>
@@ -330,7 +329,7 @@ export default function UserProfile() {
                     <div className="flex items-center gap-3 mb-3">
                       <div className="w-9 h-9 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
                         <img
-                          src={review.reviewer_avatar || `https://api.dicebear.com/7.x/notionists/svg?seed=${review.reviewer_name}`}
+                          src={review.reviewer_avatar || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y'}
                           alt={review.reviewer_name}
                           className="w-full h-full object-cover"
                         />
@@ -365,7 +364,7 @@ export default function UserProfile() {
                   <div className="flex items-center gap-3 mb-3">
                     <div className="w-9 h-9 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
                       <img
-                        src={reviews[0].reviewer_avatar || `https://api.dicebear.com/7.x/notionists/svg?seed=${reviews[0].reviewer_name}`}
+                        src={reviews[0].reviewer_avatar || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y'}
                         alt={reviews[0].reviewer_name}
                         className="w-full h-full object-cover"
                       />

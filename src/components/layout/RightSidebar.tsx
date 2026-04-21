@@ -23,7 +23,8 @@ export default function RightSidebar() {
       });
   }, [user]);
 
-  const avatarUrl = profileAvatar || user?.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/notionists/svg?seed=${user?.id}`;
+  const DEFAULT_AVATAR = 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y';
+  const avatarUrl = profileAvatar || user?.user_metadata?.avatar_url || DEFAULT_AVATAR;
 
   const suggestions = useMemo(() => {
     if (!posts || posts.length === 0) return [];
@@ -31,7 +32,8 @@ export default function RightSidebar() {
     // Extract unique users from posts
     const usersMap = new Map();
     posts.forEach(post => {
-      if (post.user_id !== user?.id && !usersMap.has(post.user_id)) {
+      const isCurrentUser = user?.id && post.user_id && post.user_id.toLowerCase() === user.id.toLowerCase();
+      if (!isCurrentUser && !usersMap.has(post.user_id)) {
         usersMap.set(post.user_id, {
           id: post.user_id,
           name: post.businessName,
@@ -59,7 +61,7 @@ export default function RightSidebar() {
               src={avatarUrl} 
               alt={displayName} 
               className="w-full h-full object-cover" 
-              onError={(e) => { (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/notionists/svg?seed=${user?.id || 'guest'}`; }}
+              onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_AVATAR; }}
             />
           </div>
           <div className="flex flex-col overflow-hidden">
@@ -67,9 +69,7 @@ export default function RightSidebar() {
             <span className="text-sm text-gray-400 truncate leading-tight">{displayName}</span>
           </div>
         </Link>
-        <button className="text-[12px] font-bold text-primary hover:text-primary/70 transition-colors">
-          Cambiar
-        </button>
+
       </div>
 
       {/* Suggestions Section */}
@@ -88,10 +88,10 @@ export default function RightSidebar() {
                 <Link to={`/user/${s.id}`} className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-full overflow-hidden border border-gray-50 transition-transform group-hover:scale-105">
                     <img 
-                      src={s.avatar || `https://api.dicebear.com/7.x/notionists/svg?seed=${s.id}`} 
+                      src={s.avatar || DEFAULT_AVATAR} 
                       alt={s.name} 
                       className="w-full h-full object-cover" 
-                      onError={(e) => { (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/notionists/svg?seed=${s.id}`; }}
+                      onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_AVATAR; }}
                     />
                   </div>
                   <div className="flex flex-col">

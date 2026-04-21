@@ -22,9 +22,9 @@ export default function UploadProduct() {
   const [profileAvatar, setProfileAvatar] = useState<string | null>(null);
 
   // Fallback to name or placeholder
-  const displayName = user?.user_metadata?.full_name || 'Emprendedor';
-  const metadataAvatar = user?.user_metadata?.avatar_url;
-  const avatarUrl = profileAvatar || metadataAvatar || `https://api.dicebear.com/7.x/notionists/svg?seed=${user?.id || 'guest'}`;
+  const DEFAULT_AVATAR = 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y';
+  const displayName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Mi Negocio';
+  const avatarUrl = profileAvatar || user?.user_metadata?.avatar_url || DEFAULT_AVATAR;
 
   useEffect(() => {
     if (!user) return;

@@ -21,7 +21,10 @@ export default function BottomNav({ activeTab }: BottomNavProps) {
       >
         <Home size={24} strokeWidth={2} />
       </button>
-      <button className="p-2 text-black hover:text-gray-600 transition-colors">
+      <button 
+        onClick={() => navigate('/development')}
+        className={`p-2 transition-colors ${currentTab === 'search' ? 'text-[#102042]' : 'text-black'}`}
+      >
         <Search size={24} strokeWidth={2} />
       </button>
       <button 

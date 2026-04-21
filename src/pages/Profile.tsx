@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MobileContainer from '@/components/layout/MobileContainer';
 import BottomNav from '@/components/layout/BottomNav';
-import { ChevronLeft, LogOut, Grid3X3, Bookmark, Settings } from 'lucide-react';
+import { ChevronLeft, LogOut, Grid3X3, Bookmark, Settings, Trash2 } from 'lucide-react';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useFeedContext, type Post } from '@/contexts/FeedContext';
@@ -22,10 +22,14 @@ export default function Profile() {
   const [followingCount, setFollowingCount] = useState(0);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [profileAvatar, setProfileAvatar] = useState<string | null>(null);
+  const [isRemovingAvatar, setIsRemovingAvatar] = useState(false);
+  const [showPhotoMenu, setShowPhotoMenu] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const displayName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Usuario CampusMarket';
   const role = user?.user_metadata?.role || 'usuario';
-  const avatarUrl = profileAvatar || user?.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/notionists/svg?seed=${user?.id}`;
+  const avatarUrl = profileAvatar || user?.user_metadata?.avatar_url || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y';
 
   useEffect(() => {
     if (!user) return;
@@ -101,6 +105,83 @@ export default function Profile() {
     }
   };
 
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    setIsUploading(true);
+    setShowPhotoMenu(false);
+    try {
+      // 1. Upload to storage
+      const fileName = `avatars/${user.id}-${Date.now()}-${file.name}`;
+      const { error: uploadError } = await supabase.storage
+        .from('product-images')
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: publicData } = supabase.storage
+        .from('product-images')
+        .getPublicUrl(fileName);
+      
+      const newAvatarUrl = publicData.publicUrl;
+
+      // 2. Update profiles table
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: newAvatarUrl })
+        .eq('id', user.id);
+
+      if (profileError) throw profileError;
+
+      // 3. Update Auth metadata for instant global refresh
+      const { error: authError } = await supabase.auth.updateUser({
+        data: { avatar_url: newAvatarUrl }
+      });
+
+      if (authError) throw authError;
+
+      // 4. Update local state
+      setProfileAvatar(newAvatarUrl);
+    } catch (error) {
+      console.error('Error uploading avatar:', error);
+      alert('Error al subir la foto de perfil.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleRemoveAvatar = async () => {
+    if (!user) return;
+    
+    setShowPhotoMenu(false);
+    setIsRemovingAvatar(true);
+    try {
+      // 1. Update profiles table
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: null })
+        .eq('id', user.id);
+
+      if (profileError) throw profileError;
+
+      // 2. Update Auth metadata
+      const { error: authError } = await supabase.auth.updateUser({
+        data: { avatar_url: null }
+      });
+
+      if (authError) throw authError;
+
+      // 3. Clear local state
+      setProfileAvatar(null);
+    } catch (error) {
+      console.error('Error removing avatar:', error);
+      alert('Error al eliminar la foto de perfil.');
+    } finally {
+      setIsRemovingAvatar(false);
+    }
+  };
+
   const myPosts = posts.filter(p => p.businessName === displayName);
   const mySavedPosts = posts.filter(p => savedPostIds.includes(p.id));
 
@@ -115,29 +196,94 @@ export default function Profile() {
           
           {/* Top Bar - Mobile Only */}
           <div className="flex items-center justify-between px-4 pt-6 pb-4 lg:hidden">
-            <button onClick={() => navigate(-1)} className="p-1 -ml-1 text-black hover:bg-gray-100 rounded-full transition-colors">
-              <ChevronLeft size={24} />
+            <button onClick={handleEditProfile} className="p-1 -ml-1 text-black hover:bg-gray-100 rounded-full transition-colors" title="Configuración">
+              <Settings size={28} className="text-black" />
             </button>
-            <div className="flex items-center gap-2 font-roboto font-bold text-[16px] text-black">
-              {displayName}
-              <Settings size={18} className="text-black" />
+            <div className="flex items-center justify-center flex-1 px-4 overflow-hidden">
+              <span className="font-roboto font-bold text-[22px] text-black tracking-tight truncate">{displayName}</span>
             </div>
             <button onClick={handleLogout} className="text-red-500 hover:bg-red-50 p-2 -mr-2 rounded-full transition-colors" title="Cerrar sesión">
-              <LogOut size={20} />
+              <LogOut size={22} className="opacity-90" />
             </button>
           </div>
 
           {/* Profile Stats Header - Responsive */}
           <div className="flex items-center gap-10 px-6 mt-8 mb-8">
-            {/* Avatar */}
-            <div className="w-[80px] h-[80px] md:w-[150px] md:h-[150px] rounded-full bg-gray-50 border border-gray-100 overflow-hidden shadow-sm flex-shrink-0">
-              <img 
-                src={avatarUrl} 
-                alt="Profile Avatar" 
-                className="w-full h-full object-cover"
-                onError={(e) => { (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/notionists/svg?seed=${user?.id || 'guest'}`; }}
-              />
+            {/* Avatar & Cloud Menu Container */}
+            <div className="relative flex-shrink-0">
+              <div 
+                onClick={() => setShowPhotoMenu(!showPhotoMenu)}
+                className={cn(
+                  "relative w-[80px] h-[80px] md:w-[150px] md:h-[150px] rounded-full bg-gray-50 border border-gray-100 overflow-hidden shadow-sm cursor-pointer",
+                  (isRemovingAvatar || isUploading) && "opacity-50 pointer-events-none"
+                )}
+              >
+                <img 
+                  src={avatarUrl} 
+                  alt="Profile Avatar" 
+                  className="w-full h-full object-cover"
+                  onError={(e) => { (e.target as HTMLImageElement).src = 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y'; }}
+                />
+                {(isRemovingAvatar || isUploading) && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-white/20">
+                    <div className="w-5 h-5 md:w-8 md:h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                  </div>
+                )}
+              </div>
+
+              {/* Cloud Menu Tooltip */}
+              <AnimatePresence>
+                {showPhotoMenu && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute top-full mt-2 left-1/2 -translate-x-1/2 z-[300] bg-white rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.15)] border border-gray-100 w-48 overflow-hidden"
+                  >
+                    {/* Top pointing arrow */}
+                    <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-t border-l border-gray-100 rotate-45" />
+                    
+                    <div className="relative bg-white z-10 flex flex-col py-1">
+                      <button
+                        onClick={() => {
+                          setShowPhotoMenu(false);
+                          fileInputRef.current?.click();
+                        }}
+                        className="px-4 py-3 text-left text-[14px] font-roboto font-bold text-[#0095f6] hover:bg-gray-50 transition-colors"
+                      >
+                        Nueva foto de perfil
+                      </button>
+
+                      {avatarUrl && !avatarUrl.includes('gravatar.com') && (
+                        <button
+                          onClick={handleRemoveAvatar}
+                          className="px-4 py-3 text-left text-[14px] font-roboto font-bold text-[#ed4956] hover:bg-gray-50 transition-colors border-t border-gray-50"
+                        >
+                          Eliminar foto actual
+                        </button>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Backdrop for mobile closing */}
+              {showPhotoMenu && (
+                <div 
+                  className="fixed inset-0 z-[290]" 
+                  onClick={() => setShowPhotoMenu(false)}
+                />
+              )}
             </div>
+
+            <input 
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              accept="image/*"
+              className="hidden"
+            />
 
             {/* Stats & Actions */}
             <div className="flex-1 flex flex-col gap-4">
@@ -302,6 +448,7 @@ export default function Profile() {
           </>
         )}
       </AnimatePresence>
+
 
     </MobileContainer>
   );

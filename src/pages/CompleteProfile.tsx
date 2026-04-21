@@ -5,6 +5,7 @@ import { ChevronLeft, CheckCircle, Camera, User, MapPin, Instagram, Facebook, Me
 import { ShimmerButton } from '@/registry/magicui/shimmer-button';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
+import { cn } from '@/lib/utils';
 
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -62,7 +63,7 @@ export default function CompleteProfile() {
     e.preventDefault();
     setLoading(true);
 
-    let avatarUrl = user?.user_metadata?.avatar_url;
+    let avatarUrl: string | null = avatarFile ? null : avatarPreview;
 
     try {
       // 1. Upload Avatar if selected
@@ -189,10 +190,20 @@ export default function CompleteProfile() {
           </div>
           <button 
             type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="mt-3 text-[#102042] text-[13px] font-bold"
+            onClick={() => {
+              if (avatarPreview) {
+                setAvatarPreview(null);
+                setAvatarFile(null);
+              } else {
+                fileInputRef.current?.click();
+              }
+            }}
+            className={cn(
+              "mt-3 text-[13px] font-bold",
+              avatarPreview ? "text-red-500" : "text-[#102042]"
+            )}
           >
-            Cargar foto de perfil
+            {avatarPreview ? "Eliminar foto de perfil" : "Cargar foto de perfil"}
           </button>
           <input 
             type="file"

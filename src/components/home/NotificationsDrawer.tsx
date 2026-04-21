@@ -98,9 +98,10 @@ export default function NotificationsDrawer({ isOpen, onClose }: NotificationsDr
                     <div className="relative flex-shrink-0">
                       <div className="w-12 h-12 rounded-full overflow-hidden border border-gray-100 shadow-sm">
                         <img 
-                          src={notif.actor_avatar || `https://api.dicebear.com/7.x/notionists/svg?seed=${notif.actor_name}`} 
+                          src={notif.actor_avatar || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y'} 
                           alt={notif.actor_name} 
                           className="w-full h-full object-cover"
+                          onError={(e) => { (e.target as HTMLImageElement).src = 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y'; }}
                         />
                       </div>
                       <div className="absolute -bottom-1 -right-1 bg-white p-1 rounded-full shadow-sm">

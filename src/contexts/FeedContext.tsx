@@ -71,11 +71,12 @@ export const FeedProvider = ({ children }: { children: ReactNode }) => {
         { event: 'INSERT', schema: 'public', table: 'posts' },
         (payload) => {
           const newPostRaw = payload.new;
+          const DEFAULT_AVATAR = 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y';
           const newPost: Post = {
             id: newPostRaw.id,
             user_id: newPostRaw.user_id,
             businessName: newPostRaw.business_name,
-            avatarUrl: newPostRaw.avatar_url || `https://api.dicebear.com/7.x/notionists/svg?seed=${newPostRaw.business_name}`,
+            avatarUrl: newPostRaw.avatar_url || DEFAULT_AVATAR,
             imageUrl: newPostRaw.image_url,
             price: newPostRaw.price,
             description: newPostRaw.description,
@@ -127,11 +128,13 @@ export const FeedProvider = ({ children }: { children: ReactNode }) => {
 
       if (postsError) throw postsError;
 
+      const DEFAULT_AVATAR = 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y';
+
       const activePosts: Post[] = (postsData || []).map(p => ({
         id: p.id,
         user_id: p.user_id,
         businessName: p.business_name,
-        avatarUrl: p.avatar_url || `https://api.dicebear.com/7.x/notionists/svg?seed=${p.business_name}`,
+        avatarUrl: p.avatar_url || DEFAULT_AVATAR,
         imageUrl: p.image_url,
         price: p.price,
         description: p.description,
@@ -140,25 +143,43 @@ export const FeedProvider = ({ children }: { children: ReactNode }) => {
 
       // Enrich post avatars from profiles table (fresher source)
       const uniqueUserIds = Array.from(new Set(activePosts.map(p => p.user_id)));
+      const profileMap: Record<string, { avatar_url?: string; business_name?: string }> = {};
+
       if (uniqueUserIds.length > 0) {
         const { data: profileData } = await supabase
           .from('profiles')
           .select('id, avatar_url, business_name')
           .in('id', uniqueUserIds);
 
-        if (profileData && profileData.length > 0) {
-          const profileMap: Record<string, { avatar_url?: string; business_name?: string }> = {};
-          profileData.forEach(p => { profileMap[p.id] = p; });
-
-          activePosts.forEach(post => {
-            const profile = profileMap[post.user_id];
-            if (profile) {
-              if (profile.avatar_url) post.avatarUrl = profile.avatar_url;
-              if (profile.business_name) post.businessName = profile.business_name;
-            }
+        if (profileData) {
+          profileData.forEach(p => { 
+            if (p.id) profileMap[p.id.toLowerCase()] = p; 
           });
         }
       }
+
+      // ALWAYS run enrichment loop to ensure fallbacks and valid local metadata
+      activePosts.forEach(post => {
+        const normalizedId = post.user_id?.toLowerCase() || '';
+        const profile = profileMap[normalizedId];
+        
+        // Priority 1: Profiles table data (source of truth)
+        if (profile) {
+          post.avatarUrl = profile.avatar_url || DEFAULT_AVATAR;
+          if (profile.business_name) post.businessName = profile.business_name;
+        } else if (user && normalizedId === user.id.toLowerCase()) {
+          // Fallback to local session only if profiles table data is missing
+          const metaAvatar = user.user_metadata?.avatar_url;
+          const metaName = user.user_metadata?.full_name || user.email?.split('@')[0];
+          post.avatarUrl = metaAvatar || DEFAULT_AVATAR;
+          if (metaName) post.businessName = metaName;
+        }
+
+        // Priority 3: Maintain fallback for unknown users if DiceBear sneaks in
+        if (!post.avatarUrl || post.avatarUrl.includes('dicebear')) {
+          post.avatarUrl = DEFAULT_AVATAR;
+        }
+      });
 
       const { data: allLikes } = await supabase.from('likes').select('post_id, user_id');
       
@@ -218,7 +239,7 @@ export const FeedProvider = ({ children }: { children: ReactNode }) => {
           user_id: post.user_id,
           actor_id: user.id,
           actor_name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Un usuario',
-          actor_avatar: user?.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/notionists/svg?seed=${user?.id}`,
+          actor_avatar: user?.user_metadata?.avatar_url || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y',
           type: 'like',
           post_id: postId,
           post_image: post.imageUrl
@@ -242,12 +263,23 @@ export const FeedProvider = ({ children }: { children: ReactNode }) => {
   const deletePost = async (postId: string) => {
     if (!user) return false;
     try {
-      const { error } = await supabase.from('posts').delete().eq('id', postId).eq('user_id', user.id);
-      if (error) throw error;
+      // With ON DELETE CASCADE set up in Supabase, we only need to delete the post.
+      // The database will automatically clean up likes, comments, notifications, etc.
+      const { error } = await supabase
+        .from('posts')
+        .delete()
+        .eq('id', postId)
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('Database error deleting post:', error.message, error.details);
+        throw error;
+      }
+      
       setPosts(prev => prev.filter(p => p.id !== postId));
       return true;
     } catch (error) {
-      console.error('Error deleting post:', error);
+      console.error('Error in deletePost flow:', error);
       return false;
     }
   };
@@ -334,7 +366,7 @@ export const FeedProvider = ({ children }: { children: ReactNode }) => {
         return data.map(c => ({
           ...c,
           user_name: profileMap[c.user_id]?.business_name || 'Alguien',
-          user_avatar: profileMap[c.user_id]?.avatar_url
+          user_avatar: profileMap[c.user_id]?.avatar_url || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y'
         }));
       }
 
@@ -399,7 +431,7 @@ export const FeedProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const addReview = async (targetUserId: string, rating: number, content: string) => {
+  const addReview = async (targetUserId: string, rating: number, content: string, imageUrl?: string) => {
     if (!user) return false;
     try {
       const userName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Usuario';
@@ -416,7 +448,8 @@ export const FeedProvider = ({ children }: { children: ReactNode }) => {
         target_user_id: targetUserId,
         reviewer_id: user.id,
         rating,
-        content
+        content,
+        image_url: imageUrl
       });
 
       if (error) throw error;
@@ -483,7 +516,7 @@ export const FeedProvider = ({ children }: { children: ReactNode }) => {
         return data.map(r => ({
           ...r,
           reviewer_name: profileMap[r.reviewer_id]?.business_name || 'Alguien',
-          reviewer_avatar: profileMap[r.reviewer_id]?.avatar_url
+          reviewer_avatar: profileMap[r.reviewer_id]?.avatar_url || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y'
         }));
       }
 

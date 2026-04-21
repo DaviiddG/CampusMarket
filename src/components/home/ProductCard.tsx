@@ -154,7 +154,7 @@ export default function ProductCard({
             src={avatarUrl} 
             alt={businessName} 
             className="w-full h-full object-cover"
-            onError={(e) => { (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/notionists/svg?seed=${businessName}`; }}
+            onError={(e) => { (e.target as HTMLImageElement).src = 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y'; }}
           />
         </Link>
         <Link 
@@ -339,10 +339,10 @@ export default function ProductCard({
                     <div key={comment.id} className="flex items-start gap-2.5 group">
                       <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 bg-gray-100">
                         <img 
-                          src={comment.user_avatar || `https://api.dicebear.com/7.x/notionists/svg?seed=${comment.user_name}`} 
-                          alt="" 
+                          src={comment.avatar_url || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y'} 
+                          alt={comment.user_name} 
                           className="w-full h-full object-cover"
-                          onError={(e) => { (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/notionists/svg?seed=${comment.user_name}`; }}
+                          onError={(e) => { (e.target as HTMLImageElement).src = 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y'; }}
                         />
                       </div>
                       <div className="flex-1 min-w-0">
@@ -373,10 +373,10 @@ export default function ProductCard({
               <div className="flex items-center gap-2 pt-2 border-t border-gray-50">
                 <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 bg-gray-100">
                   <img 
-                    src={user?.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/notionists/svg?seed=${user?.id}`}
-                    alt="" 
-                    className="w-full h-full object-cover"
-                    onError={(e) => { (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/notionists/svg?seed=${user?.id}`; }}
+                    src={currentUserAvatar || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y'} 
+                    alt="My Avatar" 
+                    className="w-full h-full object-cover shadow-sm"
+                    onError={(e) => { (e.target as HTMLImageElement).src = 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y'; }}
                   />
                 </div>
                 <input
@@ -442,9 +442,11 @@ export default function ProductCard({
                       const success = await deletePost(id);
                       if (success) {
                         onDelete?.();
+                        setShowDeleteConfirm(false);
+                      } else {
+                        alert('No se pudo eliminar la publicación. Es posible que tengas problemas de conexión o permisos insuficientes.');
                       }
                       setIsDeleting(false);
-                      setShowDeleteConfirm(false);
                     }}
                     className="w-full h-14 bg-red-500 text-white rounded-2xl font-roboto font-bold text-lg shadow-lg shadow-red-200 active:scale-95 transition-all flex items-center justify-center disabled:opacity-50"
                   >

@@ -45,14 +45,19 @@ export default function Sidebar() {
     await supabase.auth.signOut();
   };
 
-  const userAvatar = profileAvatar || user?.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/notionists/svg?seed=${user?.id}`;
+  const DEFAULT_AVATAR = 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y';
+  const userAvatar = profileAvatar || user?.user_metadata?.avatar_url || DEFAULT_AVATAR;
 
   return (
     <aside className="hidden lg:flex flex-col w-[245px] h-screen border-r border-gray-100 bg-white px-3 py-8 sticky top-0 flex-shrink-0 z-50">
       <div className="flex flex-col h-full">
         {/* Logo */}
-        <Link to="/home" className="px-3 mb-12 flex items-center justify-start transition-transform active:scale-95">
-          <img src={logoUrl} alt="CampusMarket" className="h-[52px] w-auto object-contain" />
+        <Link to="/home" className="px-3 mb-10 flex items-center justify-start group">
+          <img 
+            src={logoUrl} 
+            alt="CampusMarket" 
+            className="w-[180px] h-auto object-contain transition-transform group-hover:scale-105 group-active:scale-95" 
+          />
         </Link>
 
         {/* Nav Items - Spaced out for vertical balance */}
@@ -114,7 +119,7 @@ export default function Sidebar() {
                 src={userAvatar} 
                 alt="Profile" 
                 className="w-full h-full object-cover"
-                onError={(e) => { (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/notionists/svg?seed=${user?.id || 'guest'}`; }}
+                onError={(e) => { (e.target as HTMLImageElement).src = 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y'; }}
               />
             </div>
             <span className={cn(
