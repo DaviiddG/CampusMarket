@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import MobileContainer from '@/components/layout/MobileContainer';
-import { X, Star as StarIcon, ImagePlus, Trash2, AlertCircle } from 'lucide-react';
+import { X, Star as StarIcon, ImagePlus, Trash2 } from 'lucide-react';
 import { useFeedContext } from '@/contexts/FeedContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabase';

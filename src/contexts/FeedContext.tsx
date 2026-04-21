@@ -47,7 +47,7 @@ interface FeedContextType {
   addComment: (postId: string, text: string) => Promise<boolean>;
   deleteComment: (commentId: string) => Promise<boolean>;
   getComments: (postId: string) => Promise<Comment[]>;
-  addReview: (targetUserId: string, rating: number, content: string) => Promise<boolean>;
+  addReview: (targetUserId: string, rating: number, content: string, imageUrl?: string) => Promise<boolean>;
   getReviews: (targetUserId: string) => Promise<Review[]>;
   loading: boolean;
 }

@@ -339,7 +339,7 @@ export default function ProductCard({
                     <div key={comment.id} className="flex items-start gap-2.5 group">
                       <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 bg-gray-100">
                         <img 
-                          src={comment.avatar_url || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y'} 
+                          src={comment.user_avatar || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y'} 
                           alt={comment.user_name} 
                           className="w-full h-full object-cover"
                           onError={(e) => { (e.target as HTMLImageElement).src = 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y'; }}
@@ -373,7 +373,7 @@ export default function ProductCard({
               <div className="flex items-center gap-2 pt-2 border-t border-gray-50">
                 <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 bg-gray-100">
                   <img 
-                    src={currentUserAvatar || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y'} 
+                    src={user?.user_metadata?.avatar_url || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y'} 
                     alt="My Avatar" 
                     className="w-full h-full object-cover shadow-sm"
                     onError={(e) => { (e.target as HTMLImageElement).src = 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y'; }}

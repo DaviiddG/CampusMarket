@@ -1,12 +1,9 @@
-import { useNavigate } from 'react-router-dom';
+
 import MobileContainer from '@/components/layout/MobileContainer';
 import { Hammer } from 'lucide-react';
 import { motion } from 'framer-motion';
 import BottomNav from '@/components/layout/BottomNav';
-
 export default function DevelopmentScreen() {
-    const navigate = useNavigate();
-
     return (
         <MobileContainer className="bg-white p-6 relative flex flex-col items-center justify-center overflow-hidden h-full min-h-full">
             <motion.div
