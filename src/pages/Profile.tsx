@@ -364,38 +364,60 @@ export default function Profile() {
         </div>
 
         {/* Grid Content */}
-        {displayPosts.length === 0 ? (
-          <div className="flex flex-col items-center justify-center pt-16 text-gray-500">
-            {activeTab === 'posts' ? (
-              <>
-                <Grid3X3 size={48} strokeWidth={1} className="mb-4 opacity-30" />
-                <p className="font-roboto">No has publicado nada aún.</p>
-              </>
-            ) : (
-              <>
-                <Bookmark size={48} strokeWidth={1} className="mb-4 opacity-30" />
-                <p className="font-roboto">Aún no has guardado publicaciones.</p>
-              </>
-            )}
-            
-          </div>
-        ) : (
-          <div className="grid grid-cols-3 gap-[2px] mt-[2px] w-full">
-            {displayPosts.map(post => (
-              <div 
-                key={post.id} 
-                onClick={() => setSelectedPost(post)}
-                className="aspect-square w-full bg-gray-50 overflow-hidden group cursor-pointer border-[0.5px] border-gray-100"
-              >
-                <img 
-                  src={post.imageUrl} 
-                  alt={post.businessName} 
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                />
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, x: activeTab === 'posts' ? -20 : 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: activeTab === 'posts' ? 20 : -20 }}
+            transition={{ duration: 0.15, ease: 'easeOut' }}
+            drag="x"
+            dragConstraints={{ left: 0, right: 0 }}
+            dragElastic={0.2}
+            onDragEnd={(_, { offset }) => {
+              const swipe = offset.x;
+              if (swipe < -40) {
+                setActiveTab('saved');
+              } else if (swipe > 40) {
+                setActiveTab('posts');
+              }
+            }}
+            className="w-full min-h-[300px]"
+          >
+            {displayPosts.length === 0 ? (
+              <div className="flex flex-col items-center justify-center pt-16 text-gray-500">
+                {activeTab === 'posts' ? (
+                  <>
+                    <Grid3X3 size={48} strokeWidth={1} className="mb-4 opacity-30" />
+                    <p className="font-roboto">No has publicado nada aún.</p>
+                  </>
+                ) : (
+                  <>
+                    <Bookmark size={48} strokeWidth={1} className="mb-4 opacity-30" />
+                    <p className="font-roboto">Aún no has guardado publicaciones.</p>
+                  </>
+                )}
+                
               </div>
-            ))}
-          </div>
-        )}
+            ) : (
+              <div className="grid grid-cols-3 gap-[2px] mt-[2px] w-full">
+                {displayPosts.map(post => (
+                  <div 
+                    key={post.id} 
+                    onClick={() => setSelectedPost(post)}
+                    className="aspect-square w-full bg-gray-50 overflow-hidden group cursor-pointer border-[0.5px] border-gray-100"
+                  >
+                    <img 
+                      src={post.imageUrl} 
+                      alt={post.businessName} 
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 pointer-events-none"
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+          </motion.div>
+        </AnimatePresence>
 
         {/* Persistent Bottom Nav - Mobile Only handled by BottomNav component */}
         <BottomNav activeTab="profile" />
