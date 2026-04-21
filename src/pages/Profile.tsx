@@ -420,9 +420,13 @@ export default function Profile() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 40 }}
               transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+              onClick={() => setSelectedPost(null)}
               className="fixed inset-0 z-[210] flex items-center justify-center p-4"
             >
-              <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-[500px] max-h-[90vh] flex flex-col overflow-hidden">
+              <div 
+                onClick={(e) => e.stopPropagation()}
+                className="relative bg-white rounded-2xl shadow-2xl w-full max-w-[500px] max-h-[90vh] flex flex-col overflow-hidden"
+              >
                 {/* Header */}
                 <div className="flex items-center gap-4 px-4 py-4 border-b border-gray-100 flex-shrink-0">
                   <button 

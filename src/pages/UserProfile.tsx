@@ -8,7 +8,8 @@ import { useAuthContext } from '@/contexts/AuthContext';
 import { useFeedContext, type Review } from '@/contexts/FeedContext';
 import { cn } from '@/lib/utils';
 import ReviewsModal from '@/components/home/ReviewsModal';
-import { AnimatePresence } from 'motion/react';
+import { AnimatePresence, motion } from 'motion/react';
+import ProductCard from '@/components/home/ProductCard';
 import { Marquee } from '@/components/ui/Marquee';
 
 export default function UserProfile() {
@@ -23,6 +24,7 @@ export default function UserProfile() {
   const [followersCount, setFollowersCount] = useState(0);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [showReviewsModal, setShowReviewsModal] = useState(false);
+  const [selectedPost, setSelectedPost] = useState<any>(null);
   
   const userPosts = posts.filter(p => p.user_id === userId);
   const popular = userPosts.slice().reverse().slice(0, 4);
@@ -291,8 +293,8 @@ export default function UserProfile() {
               </div>
               <div className="grid grid-cols-3 gap-1 px-1">
                 {userPosts.map((post) => (
-                  <div key={post.id} className="aspect-square bg-gray-50 overflow-hidden cursor-pointer">
-                    <img src={post.imageUrl} className="w-full h-full object-cover" alt="Product" />
+                  <div key={post.id} onClick={() => setSelectedPost(post)} className="aspect-square bg-gray-50 overflow-hidden cursor-pointer">
+                    <img src={post.imageUrl} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="Product" />
                   </div>
                 ))}
               </div>
@@ -307,8 +309,8 @@ export default function UserProfile() {
               </div>
               <div className="grid grid-cols-3 gap-1 px-1">
                 {popular.map((post) => (
-                  <div key={post.id + '_popular'} className="aspect-square bg-gray-50 overflow-hidden cursor-pointer">
-                    <img src={post.imageUrl} className="w-full h-full object-cover" alt="Popular" />
+                  <div key={post.id + '_popular'} onClick={() => setSelectedPost(post)} className="aspect-square bg-gray-50 overflow-hidden cursor-pointer">
+                    <img src={post.imageUrl} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="Popular" />
                   </div>
                 ))}
               </div>
@@ -435,6 +437,57 @@ export default function UserProfile() {
             reviews={reviews}
             targetName={targetUser?.businessName || 'Usuario'}
           />
+        )}
+      </AnimatePresence>
+
+      {/* Post Detail Overlay */}
+      <AnimatePresence>
+        {selectedPost && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedPost(null)}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200]"
+            />
+            {/* Panel */}
+            <motion.div 
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 40 }}
+              transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+              onClick={() => setSelectedPost(null)}
+              className="fixed inset-0 z-[210] flex items-center justify-center p-4"
+            >
+              <div 
+                onClick={(e) => e.stopPropagation()}
+                className="relative bg-white rounded-2xl shadow-2xl w-full max-w-[500px] max-h-[90vh] flex flex-col overflow-hidden"
+              >
+                {/* Header */}
+                <div className="flex items-center gap-4 px-4 py-4 border-b border-gray-100 flex-shrink-0">
+                  <button 
+                    onClick={() => setSelectedPost(null)}
+                    className="p-1 -ml-1 hover:bg-gray-100 rounded-full transition-colors"
+                  >
+                    <ChevronLeft size={24} className="text-black" />
+                  </button>
+                  <div className="flex flex-col">
+                    <span className="font-roboto font-light text-[12px] text-grayText uppercase">Publicaciones</span>
+                    <span className="font-roboto font-bold text-[14px] text-black">{selectedPost.businessName}</span>
+                  </div>
+                </div>
+                {/* Scrollable Content */}
+                <div className="flex-1 overflow-y-auto w-full no-scrollbar">
+                  <ProductCard 
+                    {...selectedPost} 
+                    onDelete={() => setSelectedPost(null)}
+                  />
+                </div>
+              </div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
     </MobileContainer>
