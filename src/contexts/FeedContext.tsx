@@ -138,6 +138,27 @@ export const FeedProvider = ({ children }: { children: ReactNode }) => {
         likes: 0
       }));
 
+      // Enrich post avatars from profiles table (fresher source)
+      const uniqueUserIds = Array.from(new Set(activePosts.map(p => p.user_id)));
+      if (uniqueUserIds.length > 0) {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('id, avatar_url, business_name')
+          .in('id', uniqueUserIds);
+
+        if (profileData && profileData.length > 0) {
+          const profileMap: Record<string, { avatar_url?: string; business_name?: string }> = {};
+          profileData.forEach(p => { profileMap[p.id] = p; });
+
+          activePosts.forEach(post => {
+            const profile = profileMap[post.user_id];
+            if (profile?.avatar_url) {
+              post.avatarUrl = profile.avatar_url;
+            }
+          });
+        }
+      }
+
       const { data: allLikes } = await supabase.from('likes').select('post_id, user_id');
       
       const likesCountMap: Record<string, number> = {};
@@ -327,6 +348,16 @@ export const FeedProvider = ({ children }: { children: ReactNode }) => {
     if (!user || !text.trim()) return false;
     
     try {
+      const userName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Usuario';
+      const userAvatar = user.user_metadata?.avatar_url;
+
+      // Ensure this user has a profiles row so their name is discoverable
+      await supabase.from('profiles').upsert({
+        id: user.id,
+        business_name: userName,
+        avatar_url: userAvatar || null
+      }, { onConflict: 'id', ignoreDuplicates: false });
+
       const { error } = await supabase.from('comments').insert({
         post_id: postId,
         user_id: user.id,
@@ -370,6 +401,16 @@ export const FeedProvider = ({ children }: { children: ReactNode }) => {
   const addReview = async (targetUserId: string, rating: number, content: string) => {
     if (!user) return false;
     try {
+      const userName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Usuario';
+      const userAvatar = user.user_metadata?.avatar_url;
+
+      // Ensure reviewer has a profiles row
+      await supabase.from('profiles').upsert({
+        id: user.id,
+        business_name: userName,
+        avatar_url: userAvatar || null
+      }, { onConflict: 'id', ignoreDuplicates: false });
+
       const { error } = await supabase.from('reviews').insert({
         target_user_id: targetUserId,
         reviewer_id: user.id,
