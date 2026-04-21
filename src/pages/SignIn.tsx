@@ -55,7 +55,7 @@ export default function SignIn() {
     };
 
     return (
-        <MobileContainer className="bg-white p-6 relative overflow-hidden">
+        <MobileContainer className="p-6 relative overflow-hidden flex flex-col" showSidebars={false}>
             {/* Success Overlay */}
             {showSuccess && (
                 <div className="absolute inset-0 z-50 bg-white/90 backdrop-blur-sm flex flex-col items-center justify-center animate-in fade-in duration-500">

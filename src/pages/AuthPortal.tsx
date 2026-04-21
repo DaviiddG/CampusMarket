@@ -7,7 +7,7 @@ export default function AuthPortal() {
     const navigate = useNavigate();
 
     return (
-        <MobileContainer className="bg-white w-full h-full flex flex-col">
+        <MobileContainer className="flex flex-col" showSidebars={false}>
             {/* Logo Section */}
             <div className="flex-1 flex flex-col items-center justify-center p-6 pb-0">
                 <div className="mb-8 transform hover:scale-105 transition-transform duration-500 w-full flex justify-center">

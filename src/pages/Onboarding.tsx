@@ -38,7 +38,7 @@ export default function Onboarding() {
     };
 
     return (
-        <MobileContainer>
+        <MobileContainer showSidebars={false}>
             {/* Hidden button area just to trigger navigation on tap */}
             <div className="absolute inset-0 z-10" onClick={handleNext}></div>
 

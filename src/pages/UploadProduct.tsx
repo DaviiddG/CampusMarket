@@ -108,151 +108,163 @@ export default function UploadProduct() {
   };
 
   return (
-    <MobileContainer className="bg-white relative overflow-y-auto pb-20">
-      
-      {/* App Bar area */}
-      <div className="w-full flex items-center justify-between px-4 pt-10 pb-4 relative">
-        <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-black hover:bg-gray-100 rounded-full transition-colors">
-          <X className="w-5 h-5" />
-        </button>
-        <h1 className="font-inter font-normal text-[16px] leading-[19px] text-black">
-          Subir publicación
-        </h1>
-        <button onClick={handleUpload} className="p-2 -mr-2 text-black hover:bg-gray-100 rounded-full transition-colors">
-          <Check className="w-5 h-5" />
-        </button>
-      </div>
-
-      <div className="flex flex-col w-full px-4 mt-6">
-        {/* User Mini Profile */}
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-[40px] h-[40px] rounded-full overflow-hidden border border-gray-100 bg-gray-200">
-            <img 
-              src={avatarUrl} 
-              alt="Avatar" 
-              className="w-full h-full object-cover" 
-            />
+    <MobileContainer className="bg-white relative overflow-y-auto pb-20 no-scrollbar">
+      {/* Scrollable Area */}
+      <div className="w-full pb-[80px] lg:pb-10">
+        <div className="max-w-[600px] mx-auto w-full">
+          
+          {/* App Bar area - Mobile Only */}
+          <div className="w-full flex lg:hidden items-center justify-between px-4 pt-10 pb-4 relative">
+            <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-black hover:bg-gray-100 rounded-full transition-colors">
+              <X className="w-5 h-5" />
+            </button>
+            <h1 className="font-inter font-normal text-[16px] leading-[19px] text-black">
+              Subir publicación
+            </h1>
+            <button onClick={handleUpload} className="p-2 -mr-2 text-black hover:bg-gray-100 rounded-full transition-colors">
+              <Check className="w-5 h-5" />
+            </button>
           </div>
-          <span className="font-roboto font-normal text-[14px] leading-[16px] text-black">
-            {displayName}
-          </span>
-        </div>
 
-        {/* Description Input */}
-        <div className="mb-4">
-          <textarea
-            placeholder="Haz una descripción del producto..."
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            maxLength={100}
-            rows={2}
-            className="w-[209px] font-roboto font-normal text-[14px] leading-[16px] text-black placeholder:text-[#848484] bg-transparent outline-none resize-none border-none"
-          />
-        </div>
+          <div className="flex flex-col w-full px-6 mt-6">
+            <h2 className="hidden lg:block text-2xl font-roboto font-bold mb-8">Crear nueva publicación</h2>
+            
+            {/* User Mini Profile */}
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-[44px] h-[44px] rounded-full overflow-hidden border border-gray-100 bg-gray-200 shadow-sm">
+                <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+              </div>
+              <span className="font-roboto font-bold text-[15px] text-black">{displayName}</span>
+            </div>
 
-        {/* Price Input */}
-        <div className="mb-2">
-          <div className="relative w-full max-w-[209px]">
-            <span className="absolute left-0 top-1/2 -translate-y-1/2 text-gray-400 font-roboto text-[14px]">$</span>
-            <input
-              type="text"
-              placeholder="Precio (ej. 15.000)"
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-              className="w-full pl-4 font-roboto font-normal text-[14px] leading-[16px] text-black placeholder:text-[#848484] bg-transparent outline-none border-b border-gray-200 pb-1 focus:border-[#9AD7F3] transition-colors"
-            />
+            {/* Description Input */}
+            <div className="mb-6">
+              <textarea
+                placeholder="Escribe una descripción cautivadora..."
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                maxLength={250}
+                rows={3}
+                className="w-full font-roboto font-normal text-[16px] text-black placeholder:text-gray-400 bg-transparent outline-none resize-none border-b border-gray-100 pb-2 focus:border-primary transition-colors"
+              />
+              <p className="text-[10px] text-gray-400 mt-1 text-right">{description.length}/250</p>
+            </div>
+
+            {/* Price Input */}
+            <div className="mb-8">
+              <label className="block text-[12px] font-bold text-gray-400 uppercase mb-2">Precio del producto</label>
+              <div className="relative w-full">
+                <span className="absolute left-0 top-1/2 -translate-y-1/2 text-gray-500 font-roboto text-[18px]">$</span>
+                <input
+                  type="text"
+                  placeholder="0.00"
+                  value={price}
+                  onChange={(e) => setPrice(e.target.value)}
+                  className="w-full pl-6 font-roboto font-bold text-[24px] text-black placeholder:text-gray-200 bg-transparent outline-none border-b border-gray-100 pb-2 focus:border-primary transition-all"
+                />
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
 
-      {/* Image Upload Area - Full Width */}
-      <div 
-        className="w-full h-[344px] bg-[#E8E8E8] relative mt-2 mb-6 cursor-pointer overflow-hidden flex items-center justify-center group"
-        onClick={() => fileInputRef.current?.click()}
-      >
-        <input 
-          type="file" 
-          accept="image/*" 
-          className="hidden" 
-          ref={fileInputRef} 
-          onChange={handleImageChange}
-        />
-        
-        {imagePreview ? (
-          <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
-        ) : (
-          <div className="flex flex-col items-center gap-2 text-gray-400 group-hover:text-gray-600 transition-colors">
-            <ImagePlus className="w-10 h-10" />
-            <span className="font-roboto text-sm">Toca para añadir foto</span>
-          </div>
-        )}
-      </div>
-
-      {/* Selects Area */}
-      <div className="w-full px-4 flex flex-col gap-4">
-        {/* Category */}
-        <div className="relative w-[341px] h-[22px] bg-[#D9D9D9] rounded-[10px] mx-auto flex items-center">
-          <select 
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            className="w-full h-full bg-transparent appearance-none text-[#848484] font-roboto font-normal text-[12px] leading-[14px] px-3 outline-none"
+          {/* Image Upload Area - Full Width in container */}
+          <div 
+            className="w-full h-[400px] bg-gray-50 border-y lg:border lg:rounded-3xl border-gray-100 relative mb-8 cursor-pointer overflow-hidden flex items-center justify-center group hover:bg-gray-100 transition-all"
+            onClick={() => fileInputRef.current?.click()}
           >
-            <option value="" disabled hidden>Categoría</option>
-            <option value="comida">Comida</option>
-            <option value="ropa">Ropa</option>
-            <option value="servicios">Servicios</option>
-            <option value="tecnologia">Tecnología</option>
-            <option value="otros">Otros</option>
-          </select>
-          <div className="absolute right-3 pointer-events-none text-[#848484]">
-            <svg width="7" height="12" viewBox="0 0 7 12" fill="none" className="rotate-90">
-              <path d="M1 1L6 6L1 11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
+            <input 
+              type="file" 
+              accept="image/*" 
+              className="hidden" 
+              ref={fileInputRef} 
+              onChange={handleImageChange}
+            />
+            
+            {imagePreview ? (
+              <>
+                <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <span className="bg-white/90 px-4 py-2 rounded-full text-sm font-bold shadow-lg">Cambiar foto</span>
+                </div>
+              </>
+            ) : (
+              <div className="flex flex-col items-center gap-3 text-gray-400 group-hover:text-primary transition-colors">
+                <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-sm">
+                  <ImagePlus className="w-8 h-8" />
+                </div>
+                <span className="font-roboto font-bold text-sm">Seleccionar foto de producto</span>
+              </div>
+            )}
           </div>
-        </div>
 
-        {/* Type of Publication */}
-        <div className="relative w-[341px] h-[22px] bg-[#D9D9D9] rounded-[10px] mx-auto flex items-center mt-2">
-          <select 
-            value={type}
-            onChange={(e) => setType(e.target.value)}
-            className="w-full h-full bg-transparent appearance-none text-[#848484] font-roboto font-normal text-[12px] leading-[14px] px-3 outline-none"
-          >
-            <option value="" disabled hidden>Tipo de publicación</option>
-            <option value="venta">Venta de producto</option>
-            <option value="promocion">Promoción/Descuento</option>
-            <option value="preventa">Preventa</option>
-          </select>
-          <div className="absolute right-3 pointer-events-none text-[#848484]">
-            <svg width="7" height="12" viewBox="0 0 7 12" fill="none" className="rotate-90">
-              <path d="M1 1L6 6L1 11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
+          {/* Selects Area */}
+          <div className="w-full px-6 flex flex-col md:flex-row gap-4 mb-10">
+            {/* Category */}
+            <div className="flex-1 relative">
+              <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1 ml-1">Categoría</label>
+              <div className="relative h-[45px] bg-gray-50 rounded-xl border border-gray-100 flex items-center group focus-within:border-primary transition-all">
+                <select 
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  className="w-full h-full bg-transparent appearance-none text-gray-700 font-roboto text-[14px] px-4 outline-none cursor-pointer"
+                >
+                  <option value="" disabled hidden>Seleccionar categoría</option>
+                  <option value="comida">🍔 Comida</option>
+                  <option value="ropa">👕 Ropa</option>
+                  <option value="servicios">🛠️ Servicios</option>
+                  <option value="tecnologia">💻 Tecnología</option>
+                  <option value="otros">📦 Otros</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Type */}
+            <div className="flex-1 relative">
+              <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1 ml-1">Tipo de publicación</label>
+              <div className="relative h-[45px] bg-gray-50 rounded-xl border border-gray-100 flex items-center group focus-within:border-primary transition-all">
+                <select 
+                  value={type}
+                  onChange={(e) => setType(e.target.value)}
+                  className="w-full h-full bg-transparent appearance-none text-gray-700 font-roboto text-[14px] px-4 outline-none cursor-pointer"
+                >
+                  <option value="" disabled hidden>¿Qué estás haciendo?</option>
+                  <option value="venta">Vendo un producto</option>
+                  <option value="promocion">Ofrezco una promoción</option>
+                  <option value="preventa">Es una preventa limitada</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Buttons Area */}
+          <div className="w-full flex flex-col md:flex-row justify-center gap-4 px-6 pb-10">
+            <motion.button 
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={handleUpload}
+              disabled={isUploading}
+              className="flex-1 h-[50px] bg-primary text-white shadow-lg shadow-primary/30 rounded-2xl flex items-center justify-center font-roboto font-bold text-[16px] disabled:opacity-50 transition-all"
+            >
+              {isUploading ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                  <span>Publicando...</span>
+                </div>
+              ) : (
+                'Publicar ahora'
+              )}
+            </motion.button>
+            
+            <motion.button 
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={handleDiscard}
+              className="flex-1 h-[50px] bg-gray-50 text-gray-600 border border-gray-100 rounded-2xl flex items-center justify-center font-roboto font-bold text-[16px] hover:bg-gray-100 transition-all"
+            >
+              Descartar
+            </motion.button>
           </div>
         </div>
       </div>
-
-      {/* Buttons Area */}
-      <div className="w-full flex justify-center gap-6 mt-10 px-4">
-        <motion.button 
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          onClick={handleUpload}
-          disabled={isUploading}
-          className="w-[150px] h-[32px] bg-[#9AD7F3] shadow-[0px_2.5px_5px_rgba(0,0,0,0.1)] rounded-[5px] flex items-center justify-center font-inter font-normal text-[13px] leading-[16px] text-center text-[#102042] disabled:opacity-50"
-        >
-          {isUploading ? 'Subiendo...' : 'Subir'}
-        </motion.button>
-        
-        <motion.button 
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          onClick={handleDiscard}
-          className="w-[150px] h-[32px] bg-[#9AD7F3] shadow-[0px_2.5px_5px_rgba(0,0,0,0.1)] rounded-[5px] flex items-center justify-center font-inter font-normal text-[13px] leading-[16px] text-center text-[#102042]"
-        >
-          Descartar
-        </motion.button>
-      </div>
-
     </MobileContainer>
   );
 }
