@@ -37,6 +37,18 @@ export default function UploadProduct() {
       });
   }, [user]);
 
+  // Format number with Colombian thousands separator (dots)
+  const formatWithDots = (value: string): string => {
+    const digits = value.replace(/\D/g, '');
+    if (!digits) return '';
+    return digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  };
+
+  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value.replace(/\D/g, ''); // only digits
+    setPrice(raw);
+  };
+
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -83,7 +95,7 @@ export default function UploadProduct() {
           image_url: publicUrl,
           category,
           type,
-          price: price.startsWith('$') ? price : '$' + price,
+          price: '$' + formatWithDots(price),
           description
         })
         .select()
@@ -170,9 +182,9 @@ export default function UploadProduct() {
                 <span className="absolute left-0 top-1/2 -translate-y-1/2 text-gray-500 font-roboto text-[18px]">$</span>
                 <input
                   type="text"
-                  placeholder="0.00"
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
+                  placeholder="0"
+                  value={formatWithDots(price)}
+                  onChange={handlePriceChange}
                   className="w-full pl-6 font-roboto font-bold text-[24px] text-black placeholder:text-gray-200 bg-transparent outline-none border-b border-gray-100 pb-2 focus:border-primary transition-all"
                 />
               </div>
