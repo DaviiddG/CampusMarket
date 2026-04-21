@@ -65,10 +65,13 @@ export default function ProductCard({
     
     supabase
       .from('follows')
-      .select('id')
+      .select('*')
       .eq('follower_id', user.id)
       .eq('following_id', postOwnerId)
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        if (error) {
+          console.error("Error al buscar status de follow:", error);
+        }
         if (data && data.length > 0) {
           setIsFollowing(true);
         } else {
