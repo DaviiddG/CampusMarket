@@ -14,7 +14,7 @@ export default function BottomNav({ activeTab }: BottomNavProps) {
 
 
   return (
-    <div className="w-full h-[61px] bg-white border-t border-[#E0E0E0] md:border-none flex items-center justify-between px-6 lg:hidden">
+    <div className="fixed bottom-0 left-0 right-0 w-full h-[61px] bg-white border-t border-[#E0E0E0] md:border-none flex items-center justify-between px-6 lg:hidden z-50" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
       <button 
         onClick={() => navigate('/home')}
         className={`p-2 transition-colors ${currentTab === 'home' ? 'text-blue-600' : 'text-black'}`}

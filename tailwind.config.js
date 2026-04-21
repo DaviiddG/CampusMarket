@@ -22,7 +22,11 @@ export default {
       backgroundImage: {
         'brand-gradient': 'linear-gradient(93.02deg, #FF0000 38.65%, #FF4D00 53.47%, #FF004D 70.15%)',
         'soft-gradient': 'linear-gradient(0deg, #9AD7F3, #9AD7F3)'
-      }
+      },
+      animation: {
+        'marquee': 'marquee var(--duration) infinite linear',
+        'marquee-vertical': 'marquee-vertical var(--duration) linear infinite',
+      },
     },
   },
   plugins: [],

@@ -1,14 +1,29 @@
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useFeedContext } from '@/contexts/FeedContext';
 import { Link } from 'react-router-dom';
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
 
 export default function RightSidebar() {
   const { user } = useAuthContext();
   const { posts } = useFeedContext();
+  const [profileAvatar, setProfileAvatar] = useState<string | null>(null);
   const displayName = user?.user_metadata?.full_name || 'Usuario';
   const username = user?.email?.split('@')[0] || 'usuario';
-  const avatarUrl = user?.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/notionists/svg?seed=${user?.id}`;
+
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from('profiles')
+      .select('avatar_url')
+      .eq('id', user.id)
+      .single()
+      .then(({ data }) => {
+        if (data?.avatar_url) setProfileAvatar(data.avatar_url);
+      });
+  }, [user]);
+
+  const avatarUrl = profileAvatar || user?.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/notionists/svg?seed=${user?.id}`;
 
   const suggestions = useMemo(() => {
     if (!posts || posts.length === 0) return [];

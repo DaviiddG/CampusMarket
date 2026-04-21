@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Heart, MessageCircle, Send, Bookmark, MoreVertical, Trash2, Edit2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useFeedContext } from '@/contexts/FeedContext';
+import { useFeedContext, type Comment } from '@/contexts/FeedContext';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
@@ -30,7 +30,7 @@ export default function ProductCard({
   onDelete
 }: ProductCardProps) {
   const { user } = useAuthContext();
-  const { likedPostIds, savedPostIds, toggleLike, toggleSave, deletePost, updatePost, addComment, sharePost } = useFeedContext();
+  const { likedPostIds, savedPostIds, toggleLike, toggleSave, deletePost, updatePost, addComment, deleteComment, getComments, sharePost } = useFeedContext();
   const isLiked = likedPostIds.includes(id);
   const isSaved = savedPostIds.includes(id);
   
@@ -38,6 +38,7 @@ export default function ProductCard({
   const [showOptionsMenu, setShowOptionsMenu] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showComments, setShowComments] = useState(false);
   
   const [isDeleting, setIsDeleting] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -45,6 +46,12 @@ export default function ProductCard({
   // Edit state
   const [editPrice, setEditPrice] = useState(price);
   const [editDescription, setEditDescription] = useState(description);
+
+  // Comment state
+  const [commentText, setCommentText] = useState('');
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [loadingComments, setLoadingComments] = useState(false);
+  const [sendingComment, setSendingComment] = useState(false);
 
   const isOwner = user?.id === postOwnerId;
 
@@ -69,6 +76,71 @@ export default function ProductCard({
       setShowEditModal(false);
     }
     setIsUpdating(false);
+  };
+
+  const handleShare = async () => {
+    // Try native share or clipboard copy first
+    const shareUrl = `${window.location.origin}/post/${id}`;
+    let shared = false;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `${businessName} en CampusMarket`,
+          text: description,
+          url: shareUrl
+        });
+        shared = true;
+      } catch {
+        // User cancelled or error — don't send notification
+        shared = false;
+      }
+    } else {
+      // Fallback: copy to clipboard
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        shared = true;
+      } catch {
+        shared = false;
+      }
+    }
+
+    // Only send notification if sharing actually happened
+    if (shared) {
+      await sharePost(id);
+    }
+  };
+
+  // Fetch comments when the section is toggled open
+  useEffect(() => {
+    if (showComments) {
+      fetchCommentsForPost();
+    }
+  }, [showComments]);
+
+  const fetchCommentsForPost = async () => {
+    setLoadingComments(true);
+    const data = await getComments(id);
+    setComments(data);
+    setLoadingComments(false);
+  };
+
+  const handleAddComment = async () => {
+    if (!commentText.trim()) return;
+    setSendingComment(true);
+    const success = await addComment(id, commentText);
+    if (success) {
+      setCommentText('');
+      await fetchCommentsForPost();
+    }
+    setSendingComment(false);
+  };
+
+  const handleDeleteComment = async (commentId: string) => {
+    const success = await deleteComment(commentId);
+    if (success) {
+      setComments(prev => prev.filter(c => c.id !== commentId));
+    }
   };
 
   return (
@@ -182,8 +254,8 @@ export default function ProductCard({
           <motion.button 
             whileHover={{ scale: 1.1 }} 
             whileTap={{ scale: 0.95 }} 
-            className="text-black"
-            onClick={() => addComment(id, "¡Me interesa!")}
+            className={cn("transition-colors", showComments ? "text-primary" : "text-black")}
+            onClick={() => setShowComments(!showComments)}
           >
             <MessageCircle size={24} strokeWidth={2} />
           </motion.button>
@@ -191,7 +263,7 @@ export default function ProductCard({
             whileHover={{ scale: 1.1 }} 
             whileTap={{ scale: 0.95 }} 
             className="text-black"
-            onClick={() => sharePost(id)}
+            onClick={handleShare}
           >
             <Send size={24} strokeWidth={2} />
           </motion.button>
@@ -210,7 +282,7 @@ export default function ProductCard({
       </div>
 
       {/* Info */}
-      <div className="px-4 pb-4">
+      <div className="px-4 pb-2">
         <p className="font-roboto font-light text-[14px] text-black mb-1">
           {likes > 0 ? (
             <>{likes.toLocaleString('es-CO')} Me gusta</>
@@ -229,6 +301,109 @@ export default function ProductCard({
           <span className="font-bold ml-1 text-primary">{price}</span>
         </div>
       </div>
+
+      {/* View comments link */}
+      {!showComments && (
+        <button 
+          onClick={() => setShowComments(true)}
+          className="px-4 pb-3 text-gray-400 text-[13px] font-roboto hover:text-gray-600 transition-colors"
+        >
+          Ver comentarios...
+        </button>
+      )}
+
+      {/* Comments Section */}
+      <AnimatePresence>
+        {showComments && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="overflow-hidden"
+          >
+            <div className="border-t border-gray-50 px-4 py-3">
+              {/* Comments List */}
+              {loadingComments ? (
+                <div className="flex items-center justify-center py-4">
+                  <div className="w-5 h-5 border-2 border-gray-200 border-t-primary rounded-full animate-spin" />
+                </div>
+              ) : comments.length === 0 ? (
+                <p className="text-gray-400 text-[13px] font-roboto py-2 text-center">
+                  No hay comentarios aún. ¡Sé el primero!
+                </p>
+              ) : (
+                <div className="space-y-3 max-h-[200px] overflow-y-auto no-scrollbar mb-3">
+                  {comments.map(comment => (
+                    <div key={comment.id} className="flex items-start gap-2.5 group">
+                      <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 bg-gray-100">
+                        <img 
+                          src={comment.user_avatar || `https://api.dicebear.com/7.x/notionists/svg?seed=${comment.user_name}`} 
+                          alt="" 
+                          className="w-full h-full object-cover" 
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-roboto text-[13px] leading-[17px]">
+                          <span className="font-medium mr-1">{comment.user_name}</span>
+                          <span className="font-light">{comment.content}</span>
+                        </p>
+                        <p className="text-[10px] text-gray-400 mt-0.5">
+                          {new Date(comment.created_at).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })}
+                        </p>
+                      </div>
+                      {/* Delete button: visible to post owner or comment author */}
+                      {(isOwner || comment.user_id === user?.id) && (
+                        <button
+                          onClick={() => handleDeleteComment(comment.id)}
+                          className="p-1 opacity-0 group-hover:opacity-100 hover:bg-red-50 rounded-full transition-all flex-shrink-0"
+                          title="Eliminar comentario"
+                        >
+                          <Trash2 size={14} className="text-red-400" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Comment Input */}
+              <div className="flex items-center gap-2 pt-2 border-t border-gray-50">
+                <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 bg-gray-100">
+                  <img 
+                    src={user?.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/notionists/svg?seed=${user?.id}`}
+                    alt="" 
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <input
+                  type="text"
+                  value={commentText}
+                  onChange={(e) => setCommentText(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleAddComment()}
+                  placeholder="Escribe un comentario..."
+                  className="flex-1 bg-transparent text-[13px] font-roboto placeholder:text-gray-300 outline-none"
+                  disabled={sendingComment}
+                />
+                <button
+                  onClick={handleAddComment}
+                  disabled={!commentText.trim() || sendingComment}
+                  className={cn(
+                    "font-roboto font-bold text-[13px] transition-colors",
+                    commentText.trim() ? "text-primary" : "text-gray-300"
+                  )}
+                >
+                  {sendingComment ? (
+                    <div className="w-4 h-4 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
+                  ) : (
+                    'Publicar'
+                  )}
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Modern Deletion Confirmation Modal */}
       <AnimatePresence>

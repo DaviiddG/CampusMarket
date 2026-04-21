@@ -21,21 +21,21 @@ export default function Profile() {
   const [followersCount, setFollowersCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+  const [profileAvatar, setProfileAvatar] = useState<string | null>(null);
   
   const displayName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Usuario CampusMarket';
   const role = user?.user_metadata?.role || 'usuario';
+  const avatarUrl = profileAvatar || user?.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/notionists/svg?seed=${user?.id}`;
 
   useEffect(() => {
     if (!user) return;
     
     const fetchFollows = async () => {
-      // Followers
       const { count: followers } = await supabase
         .from('follows')
         .select('*', { count: 'exact', head: true })
         .eq('following_id', user.id);
       
-      // Following
       const { count: following } = await supabase
         .from('follows')
         .select('*', { count: 'exact', head: true })
@@ -45,7 +45,18 @@ export default function Profile() {
       if (following !== null) setFollowingCount(following);
     };
 
+    // Fetch profile avatar from profiles table
+    const fetchProfileAvatar = async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('avatar_url')
+        .eq('id', user.id)
+        .single();
+      if (data?.avatar_url) setProfileAvatar(data.avatar_url);
+    };
+
     fetchFollows();
+    fetchProfileAvatar();
 
     // Realtime subscription for follows
     const channel = supabase
@@ -121,7 +132,7 @@ export default function Profile() {
             {/* Avatar */}
             <div className="w-[80px] h-[80px] md:w-[150px] md:h-[150px] rounded-full bg-gray-50 border border-gray-100 overflow-hidden shadow-sm flex-shrink-0">
               <img 
-                src={user?.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/notionists/svg?seed=${displayName}`} 
+                src={avatarUrl} 
                 alt="Profile Avatar" 
                 className="w-full h-full object-cover"
               />
@@ -240,9 +251,7 @@ export default function Profile() {
         )}
 
         {/* Persistent Bottom Nav - Mobile Only handled by BottomNav component */}
-        <div className="lg:hidden">
-          <BottomNav activeTab="profile" />
-        </div>
+        <BottomNav activeTab="profile" />
       </div>
     </div>
 
