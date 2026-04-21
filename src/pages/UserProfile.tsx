@@ -129,7 +129,7 @@ export default function UserProfile() {
             user_id: userId,
             actor_id: currentUser.id,
             actor_name: currentUser.user_metadata?.full_name || currentUser.email?.split('@')[0] || 'Un usuario',
-            actor_avatar: currentUser.user_metadata?.avatar_url || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y',
+            actor_avatar: currentUser.user_metadata?.avatar_url || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI0UyRThGMCIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNDAiIHI9IjIwIiBmaWxsPSIjOTRBM0I4Ii8+PHBhdGggZD0iTTIwIDEwMGEzMCAzMCAwIDAgMSA2MCAwIiBmaWxsPSIjOTRBM0I4Ii8+PC9zdmc+',
             type: 'follow'
           });
 
@@ -178,10 +178,10 @@ export default function UserProfile() {
             {/* Avatar */}
             <div className="w-24 h-24 lg:w-40 lg:h-40 rounded-full overflow-hidden border-[3px] border-primary/10 shadow-lg flex-shrink-0">
               <img 
-                src={targetUser?.avatarUrl || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y'} 
+                src={targetUser?.avatarUrl || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI0UyRThGMCIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNDAiIHI9IjIwIiBmaWxsPSIjOTRBM0I4Ii8+PHBhdGggZD0iTTIwIDEwMGEzMCAzMCAwIDAgMSA2MCAwIiBmaWxsPSIjOTRBM0I4Ii8+PC9zdmc+'} 
                 alt="Profile Avatar" 
                 className="w-full h-full object-cover"
-                onError={(e) => { (e.target as HTMLImageElement).src = 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y'; }}
+                onError={(e) => { (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI0UyRThGMCIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNDAiIHI9IjIwIiBmaWxsPSIjOTRBM0I4Ii8+PHBhdGggZD0iTTIwIDEwMGEzMCAzMCAwIDAgMSA2MCAwIiBmaWxsPSIjOTRBM0I4Ii8+PC9zdmc+'; }}
               />
             </div>
             <div className="flex-1 flex flex-col items-center lg:items-start">
@@ -329,7 +329,7 @@ export default function UserProfile() {
                     <div className="flex items-center gap-3 mb-3">
                       <div className="w-9 h-9 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
                         <img
-                          src={review.reviewer_avatar || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y'}
+                          src={review.reviewer_avatar || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI0UyRThGMCIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNDAiIHI9IjIwIiBmaWxsPSIjOTRBM0I4Ii8+PHBhdGggZD0iTTIwIDEwMGEzMCAzMCAwIDAgMSA2MCAwIiBmaWxsPSIjOTRBM0I4Ii8+PC9zdmc+'}
                           alt={review.reviewer_name}
                           className="w-full h-full object-cover"
                         />
@@ -364,7 +364,7 @@ export default function UserProfile() {
                   <div className="flex items-center gap-3 mb-3">
                     <div className="w-9 h-9 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
                       <img
-                        src={reviews[0].reviewer_avatar || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y'}
+                        src={reviews[0].reviewer_avatar || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI0UyRThGMCIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNDAiIHI9IjIwIiBmaWxsPSIjOTRBM0I4Ii8+PHBhdGggZD0iTTIwIDEwMGEzMCAzMCAwIDAgMSA2MCAwIiBmaWxsPSIjOTRBM0I4Ii8+PC9zdmc+'}
                         alt={reviews[0].reviewer_name}
                         className="w-full h-full object-cover"
                       />

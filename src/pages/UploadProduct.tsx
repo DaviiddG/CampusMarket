@@ -22,7 +22,7 @@ export default function UploadProduct() {
   const [profileAvatar, setProfileAvatar] = useState<string | null>(null);
 
   // Fallback to name or placeholder
-  const DEFAULT_AVATAR = 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y';
+  const DEFAULT_AVATAR = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI0UyRThGMCIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNDAiIHI9IjIwIiBmaWxsPSIjOTRBM0I4Ii8+PHBhdGggZD0iTTIwIDEwMGEzMCAzMCAwIDAgMSA2MCAwIiBmaWxsPSIjOTRBM0I4Ii8+PC9zdmc+';
   const displayName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Mi Negocio';
   const avatarUrl = profileAvatar || user?.user_metadata?.avatar_url || DEFAULT_AVATAR;
 
