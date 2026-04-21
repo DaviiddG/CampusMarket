@@ -5,6 +5,7 @@ import { useFeedContext, type Comment } from '@/contexts/FeedContext';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
+import { supabase } from '@/lib/supabase';
 
 interface ProductCardProps {
   id: string; 
@@ -54,6 +55,47 @@ export default function ProductCard({
   const [sendingComment, setSendingComment] = useState(false);
 
   const isOwner = user?.id === postOwnerId;
+
+  // Follow state
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [loadingFollow, setLoadingFollow] = useState(false);
+
+  useEffect(() => {
+    if (!user || isOwner) return;
+    
+    supabase
+      .from('follows')
+      .select('id')
+      .eq('follower_id', user.id)
+      .eq('following_id', postOwnerId)
+      .single()
+      .then(({ error }) => {
+        if (!error) setIsFollowing(true);
+      });
+  }, [user, postOwnerId, isOwner]);
+
+  const handleToggleFollow = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!user || loadingFollow) return;
+    
+    setLoadingFollow(true);
+    if (isFollowing) {
+      await supabase.from('follows').delete().eq('follower_id', user.id).eq('following_id', postOwnerId);
+      setIsFollowing(false);
+    } else {
+      await supabase.from('follows').insert({ follower_id: user.id, following_id: postOwnerId });
+      setIsFollowing(true);
+      
+      supabase.from('notifications').insert({
+        user_id: postOwnerId,
+        actor_id: user.id,
+        actor_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Un usuario',
+        actor_avatar: user.user_metadata?.avatar_url || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI0UyRThGMCIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNDAiIHI9IjIwIiBmaWxsPSIjOTRBM0I4Ii8+PHBhdGggZD0iTTIwIDEwMGEzMCAzMCAwIDAgMSA2MCAwIiBmaWxsPSIjOTRBM0I4Ii8+PC9zdmc+',
+        type: 'follow'
+      }).then();
+    }
+    setLoadingFollow(false);
+  };
 
   const handleLike = () => toggleLike(id);
   const handleSave = () => toggleSave(id);
@@ -157,12 +199,29 @@ export default function ProductCard({
             onError={(e) => { (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI0UyRThGMCIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNDAiIHI9IjIwIiBmaWxsPSIjOTRBM0I4Ii8+PHBhdGggZD0iTTIwIDEwMGEzMCAzMCAwIDAgMSA2MCAwIiBmaWxsPSIjOTRBM0I4Ii8+PC9zdmc+'; }}
           />
         </Link>
-        <Link 
-          to={isOwner ? "/profile" : `/user/${postOwnerId}`}
-          className="font-roboto font-medium text-[14px] text-black flex-1 hover:underline underline-offset-2"
-        >
-          {businessName}
-        </Link>
+        <div className="flex-1 flex items-center gap-2 min-w-0">
+          <Link 
+            to={isOwner ? "/profile" : `/user/${postOwnerId}`}
+            className="font-roboto font-medium text-[14px] text-black hover:underline underline-offset-2 truncate"
+          >
+            {businessName}
+          </Link>
+          {!isOwner && (
+            <>
+              <span className="text-gray-300 text-xs flex-shrink-0">•</span>
+              <button 
+                onClick={handleToggleFollow}
+                disabled={loadingFollow}
+                className={cn(
+                  "font-roboto font-bold text-[13px] transition-colors flex-shrink-0 disabled:opacity-50",
+                  isFollowing ? "text-gray-500 hover:text-gray-700" : "text-blue-500 hover:text-blue-700"
+                )}
+              >
+                {isFollowing ? 'Siguiendo' : 'Seguir'}
+              </button>
+            </>
+          )}
+        </div>
         
         {isOwner && (
           <div className="relative">
