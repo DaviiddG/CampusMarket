@@ -55,7 +55,12 @@ export default function RightSidebar() {
       <div className="flex items-center justify-between mb-6">
         <Link to="/profile" className="flex items-center gap-3 group">
           <div className="w-12 h-12 rounded-full overflow-hidden border border-gray-100 shadow-sm transition-transform group-hover:scale-105">
-            <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" />
+            <img 
+              src={avatarUrl} 
+              alt={displayName} 
+              className="w-full h-full object-cover" 
+              onError={(e) => { (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/notionists/svg?seed=${user?.id || 'guest'}`; }}
+            />
           </div>
           <div className="flex flex-col overflow-hidden">
             <span className="text-sm font-bold text-black truncate leading-tight">{username}</span>
@@ -82,7 +87,12 @@ export default function RightSidebar() {
               <div key={s.id} className="flex items-center justify-between group">
                 <Link to={`/user/${s.id}`} className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-full overflow-hidden border border-gray-50 transition-transform group-hover:scale-105">
-                    <img src={s.avatar} alt={s.name} className="w-full h-full object-cover" />
+                    <img 
+                      src={s.avatar || `https://api.dicebear.com/7.x/notionists/svg?seed=${s.id}`} 
+                      alt={s.name} 
+                      className="w-full h-full object-cover" 
+                      onError={(e) => { (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/notionists/svg?seed=${s.id}`; }}
+                    />
                   </div>
                   <div className="flex flex-col">
                     <span className="text-sm font-bold text-black leading-none">{s.username}</span>

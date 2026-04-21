@@ -135,6 +135,7 @@ export default function Profile() {
                 src={avatarUrl} 
                 alt="Profile Avatar" 
                 className="w-full h-full object-cover"
+                onError={(e) => { (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/notionists/svg?seed=${user?.id || 'guest'}`; }}
               />
             </div>
 
