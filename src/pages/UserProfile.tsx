@@ -5,8 +5,7 @@ import BottomNav from '@/components/layout/BottomNav';
 import { ChevronLeft, MoreVertical, MessageCircle, Instagram, Facebook, Star, ChevronRight } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuthContext } from '@/contexts/AuthContext';
-import { useFeedContext, type Post } from '@/contexts/FeedContext';
-import { motion } from 'motion/react';
+import { useFeedContext } from '@/contexts/FeedContext';
 import { cn } from '@/lib/utils';
 
 export default function UserProfile() {

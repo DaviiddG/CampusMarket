@@ -1,5 +1,4 @@
-import { motion } from 'framer-motion';
-import { Home, Search, PlusSquare, Bell, LogOut, Compass } from 'lucide-react';
+import { Home, PlusSquare, Bell, LogOut, Compass } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import logoUrl from '@/assets/logo.png';

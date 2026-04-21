@@ -301,7 +301,7 @@ export const FeedProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const addComment = async (postId: string, text: string) => {
+  const addComment = async (postId: string, _text: string) => {
     if (!user) return;
     const post = posts.find(p => p.id === postId);
     if (post && post.user_id !== user.id) {

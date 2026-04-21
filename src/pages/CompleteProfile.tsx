@@ -12,7 +12,6 @@ import { motion, AnimatePresence } from 'motion/react';
 export default function CompleteProfile() {
   const navigate = useNavigate();
   const { user } = useAuthContext();
-  const { signOut } = useAuth();
   
   const [phone, setPhone] = useState(user?.user_metadata?.phone_number || '');
   const [bio, setBio] = useState(user?.user_metadata?.bio || '');
