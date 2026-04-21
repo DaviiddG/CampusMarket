@@ -152,8 +152,9 @@ export const FeedProvider = ({ children }: { children: ReactNode }) => {
 
           activePosts.forEach(post => {
             const profile = profileMap[post.user_id];
-            if (profile?.avatar_url) {
-              post.avatarUrl = profile.avatar_url;
+            if (profile) {
+              if (profile.avatar_url) post.avatarUrl = profile.avatar_url;
+              if (profile.business_name) post.businessName = profile.business_name;
             }
           });
         }

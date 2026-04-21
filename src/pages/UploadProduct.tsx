@@ -23,7 +23,8 @@ export default function UploadProduct() {
 
   // Fallback to name or placeholder
   const displayName = user?.user_metadata?.full_name || 'Emprendedor';
-  const avatarUrl = profileAvatar || user?.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/notionists/svg?seed=${user?.id}`;
+  const metadataAvatar = user?.user_metadata?.avatar_url;
+  const avatarUrl = profileAvatar || metadataAvatar || `https://api.dicebear.com/7.x/notionists/svg?seed=${user?.id || 'guest'}`;
 
   useEffect(() => {
     if (!user) return;
