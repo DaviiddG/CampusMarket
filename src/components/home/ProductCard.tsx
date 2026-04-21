@@ -68,9 +68,12 @@ export default function ProductCard({
       .select('id')
       .eq('follower_id', user.id)
       .eq('following_id', postOwnerId)
-      .single()
-      .then(({ error }) => {
-        if (!error) setIsFollowing(true);
+      .then(({ data }) => {
+        if (data && data.length > 0) {
+          setIsFollowing(true);
+        } else {
+          setIsFollowing(false);
+        }
       });
   }, [user, postOwnerId, isOwner]);
 
@@ -80,19 +83,29 @@ export default function ProductCard({
     
     setLoadingFollow(true);
     if (isFollowing) {
-      await supabase.from('follows').delete().eq('follower_id', user.id).eq('following_id', postOwnerId);
-      setIsFollowing(false);
+      const { error } = await supabase.from('follows').delete().eq('follower_id', user.id).eq('following_id', postOwnerId);
+      if (error) {
+        console.error("Error al dejar de seguir:", error);
+      } else {
+        setIsFollowing(false);
+      }
     } else {
-      await supabase.from('follows').insert({ follower_id: user.id, following_id: postOwnerId });
-      setIsFollowing(true);
-      
-      supabase.from('notifications').insert({
-        user_id: postOwnerId,
-        actor_id: user.id,
-        actor_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Un usuario',
-        actor_avatar: user.user_metadata?.avatar_url || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI0UyRThGMCIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNDAiIHI9IjIwIiBmaWxsPSIjOTRBM0I4Ii8+PHBhdGggZD0iTTIwIDEwMGEzMCAzMCAwIDAgMSA2MCAwIiBmaWxsPSIjOTRBM0I4Ii8+PC9zdmc+',
-        type: 'follow'
-      }).then();
+      const { error } = await supabase.from('follows').insert({ follower_id: user.id, following_id: postOwnerId });
+      if (error) {
+        console.error("Error al intentar seguir:", error);
+        // Supabase error constraint
+        if (error.code === '23505') setIsFollowing(true); // Already following
+      } else {
+        setIsFollowing(true);
+        
+        supabase.from('notifications').insert({
+          user_id: postOwnerId,
+          actor_id: user.id,
+          actor_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Un usuario',
+          actor_avatar: user.user_metadata?.avatar_url || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI0UyRThGMCIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNDAiIHI9IjIwIiBmaWxsPSIjOTRBM0I4Ii8+PHBhdGggZD0iTTIwIDEwMGEzMCAzMCAwIDAgMSA2MCAwIiBmaWxsPSIjOTRBM0I4Ii8+PC9zdmc+',
+          type: 'follow'
+        }).then();
+      }
     }
     setLoadingFollow(false);
   };
