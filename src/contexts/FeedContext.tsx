@@ -308,7 +308,7 @@ export const FeedProvider = ({ children }: { children: ReactNode }) => {
       await supabase.from('notifications').insert({
         user_id: post.user_id,
         actor_id: user.id,
-        actor_name: user?.user_metadata?.full_name || 'Alguien',
+        actor_name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Usuario',
         actor_avatar: user?.user_metadata?.avatar_url,
         type: 'share',
         post_id: postId,
@@ -340,8 +340,8 @@ export const FeedProvider = ({ children }: { children: ReactNode }) => {
         const profileMap: Record<string, { business_name?: string; avatar_url?: string }> = {};
         (profileData || []).forEach(p => { profileMap[p.id] = p; });
 
-        // Fallback: check posts table for users not found in profiles
-        const missingIds = userIds.filter(uid => !profileMap[uid]?.business_name);
+        // Fallback: check posts table for users not found or with empty names in profiles
+        const missingIds = userIds.filter(uid => !profileMap[uid]?.business_name || profileMap[uid]?.business_name.trim() === '');
         if (missingIds.length > 0) {
           const { data: postData } = await supabase
             .from('posts')
@@ -349,26 +349,46 @@ export const FeedProvider = ({ children }: { children: ReactNode }) => {
             .in('user_id', missingIds);
 
           (postData || []).forEach(p => {
-            if (!profileMap[p.user_id]?.business_name) {
+            if (!profileMap[p.user_id]?.business_name || (profileMap[p.user_id]?.business_name?.trim() ?? '') === '') {
               profileMap[p.user_id] = { business_name: p.business_name, avatar_url: p.avatar_url };
             }
           });
         }
 
+        // Fallback 3: check notifications table (acts as a name history)
+        const stillMissing2 = userIds.filter(uid => !profileMap[uid]?.business_name || (profileMap[uid]?.business_name?.trim() ?? '') === '' || profileMap[uid]?.business_name === 'Usuario');
+        if (stillMissing2.length > 0) {
+          const { data: notifData } = await supabase
+            .from('notifications')
+            .select('actor_id, actor_name')
+            .in('actor_id', stillMissing2)
+            .order('created_at', { ascending: false });
+
+          (notifData || []).forEach(n => {
+            if (!profileMap[n.actor_id]?.business_name || profileMap[n.actor_id]?.business_name === 'Usuario') {
+              profileMap[n.actor_id] = { ...profileMap[n.actor_id], business_name: n.actor_name };
+            }
+          });
+        }
+
         // Final fallback: use current user's auth metadata if this is the logged-in user
-        const stillMissing = userIds.filter(uid => !profileMap[uid]?.business_name);
-        if (user && stillMissing.includes(user.id)) {
+        const stillMissing3 = userIds.filter(uid => !profileMap[uid]?.business_name || (profileMap[uid]?.business_name?.trim() ?? '') === '' || profileMap[uid]?.business_name === 'Usuario');
+        if (user && stillMissing3.includes(user.id)) {
           profileMap[user.id] = {
-            business_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Alguien',
+            business_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Usuario',
             avatar_url: user.user_metadata?.avatar_url || profileMap[user.id]?.avatar_url
           };
         }
 
-        return data.map(c => ({
-          ...c,
-          user_name: profileMap[c.user_id]?.business_name || 'Alguien',
-          user_avatar: profileMap[c.user_id]?.avatar_url || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI0UyRThGMCIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNDAiIHI9IjIwIiBmaWxsPSIjOTRBM0I4Ii8+PHBhdGggZD0iTTIwIDEwMGEzMCAzMCAwIDAgMSA2MCAwIiBmaWxsPSIjOTRBM0I4Ii8+PC9zdmc+'
-        }));
+        return data.map(c => {
+          const name = profileMap[c.user_id]?.business_name?.trim();
+          const finalName = name && name !== '' && name !== 'Usuario' ? name : 'Usuario';
+          return {
+            ...c,
+            user_name: finalName,
+            user_avatar: profileMap[c.user_id]?.avatar_url || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI0UyRThGMCIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNDAiIHI9IjIwIiBmaWxsPSIjOTRBM0I4Ii8+PHBhdGggZD0iTTIwIDEwMGEzMCAzMCAwIDAgMSA2MCAwIiBmaWxsPSIjOTRBM0I4Ii8+PC9zdmc+'
+          };
+        });
       }
 
       return data || [];
@@ -406,7 +426,7 @@ export const FeedProvider = ({ children }: { children: ReactNode }) => {
         await supabase.from('notifications').insert({
           user_id: post.user_id,
           actor_id: user.id,
-          actor_name: user?.user_metadata?.full_name || 'Alguien',
+          actor_name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Usuario',
           actor_avatar: user?.user_metadata?.avatar_url,
           type: 'comment',
           post_id: postId,
@@ -458,7 +478,7 @@ export const FeedProvider = ({ children }: { children: ReactNode }) => {
       await supabase.from('notifications').insert({
         user_id: targetUserId,
         actor_id: user.id,
-        actor_name: user?.user_metadata?.full_name || 'Alguien',
+        actor_name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Usuario',
         actor_avatar: user?.user_metadata?.avatar_url,
         type: 'follow',
       });
@@ -491,8 +511,8 @@ export const FeedProvider = ({ children }: { children: ReactNode }) => {
         const profileMap: Record<string, { business_name?: string; avatar_url?: string }> = {};
         (profileData || []).forEach(p => { profileMap[p.id] = p; });
 
-        // Fallback to posts table
-        const missingIds = reviewerIds.filter(uid => !profileMap[uid]?.business_name);
+        // Fallback to posts table for missing or empty names
+        const missingIds = reviewerIds.filter(uid => !profileMap[uid]?.business_name || (profileMap[uid]?.business_name?.trim() ?? '') === '');
         if (missingIds.length > 0) {
           const { data: postData } = await supabase
             .from('posts')
@@ -505,20 +525,40 @@ export const FeedProvider = ({ children }: { children: ReactNode }) => {
           });
         }
 
+        // Fallback 3: check notifications table (acts as a name history)
+        const stillMissing2 = reviewerIds.filter(uid => !profileMap[uid]?.business_name || (profileMap[uid]?.business_name?.trim() ?? '') === '' || profileMap[uid]?.business_name === 'Usuario');
+        if (stillMissing2.length > 0) {
+          const { data: notifData } = await supabase
+            .from('notifications')
+            .select('actor_id, actor_name')
+            .in('actor_id', stillMissing2)
+            .order('created_at', { ascending: false });
+
+          (notifData || []).forEach(n => {
+            if (!profileMap[n.actor_id]?.business_name || profileMap[n.actor_id]?.business_name === 'Usuario') {
+              profileMap[n.actor_id] = { ...profileMap[n.actor_id], business_name: n.actor_name };
+            }
+          });
+        }
+
         // Final fallback: current user's auth metadata
-        const stillMissing2 = reviewerIds.filter(uid => !profileMap[uid]?.business_name);
-        if (user && stillMissing2.includes(user.id)) {
+        const stillMissing3 = reviewerIds.filter(uid => !profileMap[uid]?.business_name || (profileMap[uid]?.business_name?.trim() ?? '') === '' || profileMap[uid]?.business_name === 'Usuario');
+        if (user && stillMissing3.includes(user.id)) {
           profileMap[user.id] = {
-            business_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Alguien',
+            business_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Usuario',
             avatar_url: user.user_metadata?.avatar_url || profileMap[user.id]?.avatar_url
           };
         }
 
-        return data.map(r => ({
-          ...r,
-          reviewer_name: profileMap[r.reviewer_id]?.business_name || 'Alguien',
-          reviewer_avatar: profileMap[r.reviewer_id]?.avatar_url || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI0UyRThGMCIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNDAiIHI9IjIwIiBmaWxsPSIjOTRBM0I4Ii8+PHBhdGggZD0iTTIwIDEwMGEzMCAzMCAwIDAgMSA2MCAwIiBmaWxsPSIjOTRBM0I4Ii8+PC9zdmc+'
-        }));
+        return data.map(r => {
+          const name = profileMap[r.reviewer_id]?.business_name?.trim();
+          const finalName = name && name !== '' && name !== 'Usuario' ? name : 'Usuario';
+          return {
+            ...r,
+            reviewer_name: finalName,
+            reviewer_avatar: profileMap[r.reviewer_id]?.avatar_url || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI0UyRThGMCIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNDAiIHI9IjIwIiBmaWxsPSIjOTRBM0I4Ii8+PHBhdGggZD0iTTIwIDEwMGEzMCAzMCAwIDAgMSA2MCAwIiBmaWxsPSIjOTRBM0I4Ii8+PC9zdmc+'
+          };
+        });
       }
 
       return data || [];

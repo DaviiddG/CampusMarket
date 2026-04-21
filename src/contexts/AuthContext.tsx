@@ -42,6 +42,34 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return () => subscription.unsubscribe();
     }, []);
 
+    // Effect to ensure user metadata is synced with the public profiles table
+    useEffect(() => {
+        const syncProfile = async () => {
+            if (!user) return;
+            
+            try {
+                // Get the most accurate name from metadata
+                const name = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Usuario';
+                const avatar = user.user_metadata?.avatar_url;
+
+                // Sync profile if it's missing or if the current user just logged in
+                // This ensures all users (common and entrepreneurs) are in the public profiles table
+                await supabase.from('profiles').upsert({
+                    id: user.id,
+                    business_name: name,
+                    avatar_url: avatar || null,
+                    updated_at: new Date().toISOString()
+                }, { onConflict: 'id', ignoreDuplicates: false });
+            } catch (e) {
+                console.error('Error syncing profile:', e);
+            }
+        };
+
+        if (user) {
+            syncProfile();
+        }
+    }, [user]);
+
     return (
         <AuthContext.Provider value={{ session, user, loading }}>
             {children}

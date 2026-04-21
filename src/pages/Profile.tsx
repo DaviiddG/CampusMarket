@@ -2,10 +2,10 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MobileContainer from '@/components/layout/MobileContainer';
 import BottomNav from '@/components/layout/BottomNav';
-import { ChevronLeft, LogOut, Grid3X3, Bookmark, Settings } from 'lucide-react';
+import { ChevronLeft, LogOut, Grid3X3, Bookmark, Settings, Star } from 'lucide-react';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useAuth } from '@/hooks/useAuth';
-import { useFeedContext, type Post } from '@/contexts/FeedContext';
+import { useFeedContext, type Post, type Review } from '@/contexts/FeedContext';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
@@ -15,9 +15,10 @@ export default function Profile() {
   const navigate = useNavigate();
   const { user } = useAuthContext();
   const { signOut } = useAuth();
-  const { posts, savedPostIds } = useFeedContext();
+  const { posts, savedPostIds, getReviews } = useFeedContext();
   
-  const [activeTab, setActiveTab] = useState<'posts' | 'saved'>('posts');
+  const [activeTab, setActiveTab] = useState<'posts' | 'saved' | 'reviews'>('posts');
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [followersCount, setFollowersCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
@@ -59,8 +60,14 @@ export default function Profile() {
       if (data?.avatar_url) setProfileAvatar(data.avatar_url);
     };
 
+    const fetchReviews = async () => {
+      const data = await getReviews(user.id);
+      setReviews(data);
+    };
+
     fetchFollows();
     fetchProfileAvatar();
+    fetchReviews();
 
     // Realtime subscription for follows
     const channel = supabase
@@ -361,6 +368,15 @@ export default function Profile() {
               <motion.div layoutId="tab-indicator" className="absolute bottom-0 w-full h-[2px] bg-black" />
             )}
           </button>
+          <button 
+            className="flex-1 py-3 flex justify-center items-center relative"
+            onClick={() => setActiveTab('reviews')}
+          >
+            <Star size={24} className={cn("transition-colors", activeTab === 'reviews' ? "text-black" : "text-gray-400")} strokeWidth={activeTab === 'reviews' ? 2 : 1.5} />
+            {activeTab === 'reviews' && (
+              <motion.div layoutId="tab-indicator" className="absolute bottom-0 w-full h-[2px] bg-black" />
+            )}
+          </button>
         </div>
 
         {/* Grid Content */}
@@ -376,15 +392,71 @@ export default function Profile() {
             dragElastic={0.2}
             onDragEnd={(_, { offset }) => {
               const swipe = offset.x;
-              if (swipe < -40) {
-                setActiveTab('saved');
-              } else if (swipe > 40) {
-                setActiveTab('posts');
+              const TABS: Array<'posts' | 'saved' | 'reviews'> = ['posts', 'saved', 'reviews'];
+              const currentIndex = TABS.indexOf(activeTab);
+              if (swipe < -40 && currentIndex < TABS.length - 1) {
+                setActiveTab(TABS[currentIndex + 1]);
+              } else if (swipe > 40 && currentIndex > 0) {
+                setActiveTab(TABS[currentIndex - 1]);
               }
             }}
             className="w-full min-h-[300px]"
           >
-            {displayPosts.length === 0 ? (
+            {activeTab === 'reviews' ? (
+              <div className="flex flex-col w-full pb-8">
+                {reviews.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center pt-16 text-gray-500">
+                    <Star size={48} strokeWidth={1} className="mb-4 opacity-30" />
+                    <p className="font-roboto">No tienes reseñas todavía.</p>
+                  </div>
+                ) : (
+                  <div className="px-4 py-4 space-y-6">
+                    {/* General Rating */}
+                    <div className="flex flex-col items-center justify-center mb-6">
+                      <div className="flex items-center gap-2">
+                        <Star size={32} className="fill-yellow-400 text-yellow-400" />
+                        <span className="text-4xl font-roboto font-bold text-black">
+                          {Math.round((reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length) * 10) / 10}
+                        </span>
+                      </div>
+                      <p className="font-roboto text-sm text-gray-500 mt-1">Calificación general ({reviews.length})</p>
+                    </div>
+
+                    {/* Review Cards */}
+                    <div className="space-y-4">
+                      {reviews.map((review, i) => (
+                        <motion.div 
+                          key={review.id} 
+                          initial={{ opacity: 0, y: 10, filter: 'blur(4px)' }}
+                          animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                          transition={{ delay: Math.min(i * 0.1, 0.4) }}
+                          className="w-full bg-white rounded-2xl p-4 border border-gray-100 shadow-sm"
+                        >
+                          <div className="flex items-center gap-3 mb-3">
+                            <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200">
+                              <img src={review.reviewer_avatar} alt="Avatar" className="w-full h-full object-cover" />
+                            </div>
+                            <div className="flex-1">
+                               <p className="font-roboto font-medium text-[14px] text-black">{review.reviewer_name}</p>
+                               <div className="flex items-center justify-between mt-0.5">
+                                 <div className="flex gap-0.5">
+                                   {[1, 2, 3, 4, 5].map(s => (
+                                      <Star key={s} size={10} className={s <= review.rating ? 'fill-yellow-400 text-yellow-400' : 'fill-gray-200 text-gray-200'} />
+                                   ))}
+                                 </div>
+                                 <p className="text-[11px] text-gray-400 font-roboto">{new Date(review.created_at).toLocaleDateString('es-CO')}</p>
+                               </div>
+                            </div>
+                          </div>
+                          {review.content && <p className="font-roboto text-[13px] text-gray-600 leading-relaxed mb-3">{review.content}</p>}
+                          {review.image_url && <img src={review.image_url} alt="Review attachment" className="w-full h-40 object-cover rounded-xl mb-1" />}
+                        </motion.div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : displayPosts.length === 0 ? (
               <div className="flex flex-col items-center justify-center pt-16 text-gray-500">
                 {activeTab === 'posts' ? (
                   <>
