@@ -34,7 +34,7 @@ export default function MobileContainer({
         return (
             <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-[#EAF6FD] via-[#F0F8FF] to-[#E8F4F8] dark:from-[#0f172a] dark:via-[#1e293b] dark:to-[#0f172a] p-4">
                 <div className={cn(
-                    "w-full max-w-[440px] bg-white dark:bg-[#121212] rounded-3xl shadow-2xl border border-gray-100 dark:border-white/10 overflow-hidden flex flex-col transition-colors duration-300",
+                    "w-full max-w-[440px] bg-white dark:bg-[#121212] rounded-3xl shadow-2xl border border-gray-100 dark:border-white/10 overflow-hidden flex flex-col",
                     className
                 )}>
                     {children}
@@ -45,7 +45,7 @@ export default function MobileContainer({
 
     // App pages: full sidebar layout
     return (
-        <div className="min-h-screen w-full bg-white dark:bg-black transition-colors duration-300 flex lg:flex-row">
+        <div className="min-h-screen w-full bg-white dark:bg-black flex lg:flex-row">
             {/* Desktop Sidebar (Left) — fixed */}
             <Sidebar />
 
