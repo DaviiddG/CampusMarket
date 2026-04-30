@@ -202,11 +202,11 @@ export default function ProductCard({
   };
 
   return (
-    <div className="w-full bg-white mb-6">
+    <div className="w-full bg-white dark:bg-black mb-6">
       <div className="flex items-center px-4 py-3 gap-3">
         <Link 
           to={isOwner ? "/profile" : `/user/${postOwnerId}`}
-          className="w-[38px] h-[38px] rounded-full overflow-hidden border border-gray-100 shadow-sm flex-shrink-0"
+          className="w-[38px] h-[38px] rounded-full overflow-hidden border border-gray-100 dark:border-white/10 shadow-sm flex-shrink-0"
         >
           <img 
             src={avatarUrl} 
@@ -218,7 +218,7 @@ export default function ProductCard({
         <div className="flex-1 flex items-center gap-2 min-w-0">
           <Link 
             to={isOwner ? "/profile" : `/user/${postOwnerId}`}
-            className="font-roboto font-medium text-[14px] text-black hover:underline underline-offset-2 truncate"
+            className="font-roboto font-medium text-[14px] text-black dark:text-white hover:underline underline-offset-2 truncate"
           >
             {businessName}
           </Link>
@@ -243,7 +243,7 @@ export default function ProductCard({
           <div className="relative">
             <button 
               onClick={() => setShowOptionsMenu(!showOptionsMenu)}
-              className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+              className="p-1 hover:bg-gray-100 dark:hover:bg-white/10 rounded-full transition-colors"
             >
               <MoreVertical size={20} className="text-gray-500" />
             </button>
@@ -259,14 +259,14 @@ export default function ProductCard({
                     initial={{ opacity: 0, scale: 0.95, y: -10 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                    className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 z-40 overflow-hidden"
+                    className="absolute right-0 mt-2 w-48 bg-white dark:bg-[#262626] rounded-xl shadow-xl border border-gray-100 dark:border-white/10 z-40 overflow-hidden"
                   >
                     <button
                       onClick={() => {
                         setShowOptionsMenu(false);
                         setShowEditModal(true);
                       }}
-                      className="w-full px-4 py-3 text-left text-gray-700 flex items-center gap-3 hover:bg-gray-50 transition-colors border-b border-gray-50"
+                      className="w-full px-4 py-3 text-left text-gray-700 dark:text-gray-300 flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors border-b border-gray-50 dark:border-white/5"
                     >
                       <Edit2 size={18} />
                       <span className="font-roboto font-medium text-[14px]">Editar publicación</span>
@@ -290,7 +290,7 @@ export default function ProductCard({
       </div>
 
       {/* Main Image */}
-      <div className="w-full aspect-[4/5] md:aspect-square overflow-hidden bg-gray-50 border-y border-gray-100 relative flex items-center justify-center">
+      <div className="w-full aspect-[4/5] md:aspect-square overflow-hidden bg-gray-50 dark:bg-zinc-900 border-y border-gray-100 dark:border-white/10 relative flex items-center justify-center">
         <img 
           src={imageUrl} 
           alt={description} 
@@ -314,7 +314,7 @@ export default function ProductCard({
       </div>
 
       {/* Interactions */}
-      <div className="flex items-center justify-between px-4 pt-3 pb-2">
+      <div className="flex items-center justify-between px-4 pt-3 pb-2 dark:bg-black">
         <div className="flex items-center gap-4">
           <motion.button 
             whileHover={{ scale: 1.1 }}
@@ -324,13 +324,13 @@ export default function ProductCard({
           >
             <Heart 
               size={24} 
-              className={cn("transition-colors duration-300", isLiked ? "fill-red-500 text-red-500" : "text-black")} 
+              className={cn("transition-colors duration-300", isLiked ? "fill-red-500 text-red-500" : "text-black dark:text-white")} 
             />
           </motion.button>
           <motion.button 
             whileHover={{ scale: 1.1 }} 
             whileTap={{ scale: 0.95 }} 
-            className={cn("transition-colors", showComments ? "text-primary" : "text-black")}
+            className={cn("transition-colors", showComments ? "text-primary dark:text-[#9AD7F3]" : "text-black dark:text-white")}
             onClick={() => setShowComments(!showComments)}
           >
             <MessageCircle size={24} strokeWidth={2} />
@@ -338,7 +338,7 @@ export default function ProductCard({
           <motion.button 
             whileHover={{ scale: 1.1 }} 
             whileTap={{ scale: 0.95 }} 
-            className="text-black"
+            className="text-black dark:text-white"
             onClick={handleShare}
           >
             <Send size={24} strokeWidth={2} />
@@ -352,21 +352,21 @@ export default function ProductCard({
         >
           <Bookmark 
             size={24} 
-            className={cn("transition-colors duration-300", isSaved ? "fill-black text-black" : "text-black")} 
+            className={cn("transition-colors duration-300", isSaved ? "fill-black text-black dark:fill-white dark:text-white" : "text-black dark:text-white")} 
           />
         </motion.button>
       </div>
 
       {/* Info */}
-      <div className="px-4 pb-2">
-        <p className="font-roboto font-light text-[14px] text-black mb-1">
+      <div className="px-4 pb-2 dark:bg-black">
+        <p className="font-roboto font-light text-[14px] text-black dark:text-white/80 mb-1">
           {likes > 0 ? (
             <>{likes.toLocaleString('es-CO')} Me gusta</>
           ) : (
             <>Sé el primero en dar me gusta</>
           )}
         </p>
-        <div className="font-roboto text-[14px] leading-[18px]">
+        <div className="font-roboto text-[14px] leading-[18px] text-black dark:text-white">
           <Link 
             to={isOwner ? "/profile" : `/user/${postOwnerId}`}
             className="font-medium mr-1 hover:underline"
@@ -374,7 +374,7 @@ export default function ProductCard({
             {businessName}
           </Link>
           <span className="font-light">{description}</span>
-          <span className="font-bold ml-1 text-primary">{price}</span>
+          <span className="font-bold ml-1 text-primary dark:text-[#9AD7F3]">{price}</span>
         </div>
       </div>
 
@@ -382,7 +382,7 @@ export default function ProductCard({
       {!showComments && (
         <button 
           onClick={() => setShowComments(true)}
-          className="px-4 pb-3 text-gray-400 text-[13px] font-roboto hover:text-gray-600 transition-colors"
+          className="px-4 pb-3 w-full text-left bg-white dark:bg-black text-gray-400 text-[13px] font-roboto hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
         >
           Ver comentarios...
         </button>
@@ -396,9 +396,9 @@ export default function ProductCard({
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.25 }}
-            className="overflow-hidden"
+            className="overflow-hidden bg-white dark:bg-black"
           >
-            <div className="border-t border-gray-50 px-4 py-3">
+            <div className="border-t border-gray-50 dark:border-white/5 px-4 py-3">
               {/* Comments List */}
               {loadingComments ? (
                 <div className="flex items-center justify-center py-4">
@@ -421,7 +421,7 @@ export default function ProductCard({
                         />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-roboto text-[13px] leading-[17px]">
+                        <p className="font-roboto text-[13px] leading-[17px] text-black dark:text-white">
                           <span className="font-medium mr-1">{comment.user_name}</span>
                           <span className="font-light">{comment.content}</span>
                         </p>
@@ -445,7 +445,7 @@ export default function ProductCard({
               )}
 
               {/* Comment Input */}
-              <div className="flex items-center gap-2 pt-2 border-t border-gray-50">
+              <div className="flex items-center gap-2 pt-2 border-t border-gray-50 dark:border-white/5">
                 <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 bg-gray-100">
                   <img 
                     src={user?.user_metadata?.avatar_url || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI0UyRThGMCIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNDAiIHI9IjIwIiBmaWxsPSIjOTRBM0I4Ii8+PHBhdGggZD0iTTIwIDEwMGEzMCAzMCAwIDAgMSA2MCAwIiBmaWxsPSIjOTRBM0I4Ii8+PC9zdmc+'} 
@@ -460,7 +460,7 @@ export default function ProductCard({
                   onChange={(e) => setCommentText(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleAddComment()}
                   placeholder="Escribe un comentario..."
-                  className="flex-1 bg-transparent text-[13px] font-roboto placeholder:text-gray-300 outline-none"
+                  className="flex-1 bg-transparent text-[13px] font-roboto placeholder:text-gray-300 dark:text-white dark:placeholder:text-gray-600 outline-none"
                   disabled={sendingComment}
                 />
                 <button

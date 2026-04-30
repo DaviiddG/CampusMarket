@@ -65,8 +65,8 @@ export default function RightSidebar() {
             />
           </div>
           <div className="flex flex-col overflow-hidden">
-            <span className="text-sm font-bold text-black truncate leading-tight">{username}</span>
-            <span className="text-sm text-gray-400 truncate leading-tight">{displayName}</span>
+            <span className="text-sm font-bold text-black dark:text-white truncate leading-tight">{username}</span>
+            <span className="text-sm text-gray-400 dark:text-white/50 truncate leading-tight">{displayName}</span>
           </div>
         </Link>
 
@@ -75,8 +75,8 @@ export default function RightSidebar() {
       {/* Suggestions Section */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-4">
-          <span className="text-sm font-bold text-gray-400">Sugerencias para ti</span>
-          <button className="text-[12px] font-bold text-black hover:text-gray-500 transition-colors">
+          <span className="text-sm font-bold text-gray-400 dark:text-white/40">Sugerencias para ti</span>
+          <button className="text-[12px] font-bold text-black dark:text-white hover:text-gray-500 transition-colors">
             Ver todos
           </button>
         </div>
@@ -95,11 +95,11 @@ export default function RightSidebar() {
                     />
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-sm font-bold text-black leading-none">{s.username}</span>
-                    <span className="text-[11px] text-gray-400 leading-none mt-1">Nuevo en CampusMarket</span>
+                    <span className="text-sm font-bold text-black dark:text-white leading-none">{s.username}</span>
+                    <span className="text-[11px] text-gray-400 dark:text-white/40 leading-none mt-1">Nuevo en CampusMarket</span>
                   </div>
                 </Link>
-                <Link to={`/user/${s.id}`} className="text-[12px] font-bold text-primary hover:text-primary/70 transition-colors">
+                <Link to={`/user/${s.id}`} className="text-[12px] font-bold text-primary dark:text-[#9AD7F3] hover:text-primary/70 transition-colors">
                   Ver perfil
                 </Link>
               </div>

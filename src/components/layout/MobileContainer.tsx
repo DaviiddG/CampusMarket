@@ -14,7 +14,7 @@ interface MobileContainerProps {
 
 export default function MobileContainer({
     children,
-    className = "bg-white",
+    className,
     justifyCenter = true,
     showSidebars = true,
     hideRightSidebar = false,
@@ -32,9 +32,9 @@ export default function MobileContainer({
     // Auth/onboarding pages: card layout centered on gradient background
     if (!showSidebars) {
         return (
-            <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-[#EAF6FD] via-[#F0F8FF] to-[#E8F4F8] p-4">
+            <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-[#EAF6FD] via-[#F0F8FF] to-[#E8F4F8] dark:from-[#0f172a] dark:via-[#1e293b] dark:to-[#0f172a] p-4">
                 <div className={cn(
-                    "w-full max-w-[440px] bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden flex flex-col",
+                    "w-full max-w-[440px] bg-white dark:bg-[#121212] rounded-3xl shadow-2xl border border-gray-100 dark:border-white/10 overflow-hidden flex flex-col transition-colors duration-300",
                     className
                 )}>
                     {children}
@@ -44,35 +44,41 @@ export default function MobileContainer({
     }
 
     // App pages: full sidebar layout
-    // Key: NO overflow-y-auto / h-screen on inner containers — the browser window scrolls naturally
-    // so the scrollbar appears at the far right edge of the viewport (like Instagram).
-    // RightSidebar uses sticky top-0 so it follows the scroll.
     return (
-        <div className="min-h-screen w-full bg-white lg:bg-[#F8F9FA] flex lg:flex-row">
-            {/* Desktop Sidebar (Left) — fixed, doesn't participate in flex flow */}
+        <div className="min-h-screen w-full bg-white dark:bg-black transition-colors duration-300 flex lg:flex-row">
+            {/* Desktop Sidebar (Left) — fixed */}
             <Sidebar />
 
-            {/* Main scrollable area — offset by sidebar width */}
+            {/* Main Content Area */}
             <div
                 className={cn(
-                    "w-full lg:ml-[72px] flex justify-center",
+                    "w-full lg:ml-[72px] flex justify-center text-black dark:text-white",
                     className
                 )}
             >
-                <div className="flex w-full max-w-full xl:max-w-[1200px] justify-center xl:gap-8 2xl:gap-16 px-0 lg:px-4 items-start">
-                    {/* Page Content */}
+                {/* 
+                   Centered unit consisting of Feed + RightSidebar.
+                   We use max-w-7xl to keep it reasonably centered on large screens.
+                */}
+                <div className="flex w-full max-w-[1010px] justify-center lg:justify-between gap-0 lg:gap-8 xl:gap-16 px-0 lg:px-4 items-start">
+                    
+                    {/* Page Content (Feed) */}
                     <main className={cn(
-                        "flex-1 w-full flex flex-col items-center",
+                        "w-full flex flex-col items-center",
                         hideRightSidebar
-                            ? 'max-w-[700px] lg:max-w-[750px] xl:max-w-[800px]'
-                            : 'max-w-[600px] lg:max-w-none',
+                            ? 'max-w-[700px] lg:max-w-[800px]'
+                            : 'max-w-full lg:max-w-[630px]', // Instagram post size is ~630px
                         justifyCenter ? 'justify-center min-h-screen' : 'justify-start'
                     )}>
                         {children}
                     </main>
 
-                    {/* Desktop Right Sidebar — sticky, hidden on profile pages */}
-                    {!hideRightSidebar && <RightSidebar />}
+                    {/* Desktop Right Sidebar — sticky, hidden on profile/specific pages */}
+                    {!hideRightSidebar && (
+                        <div className="hidden lg:block w-[320px] flex-shrink-0">
+                            <RightSidebar />
+                        </div>
+                    )}
                 </div>
             </div>
 

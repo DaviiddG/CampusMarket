@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Home, PlusSquare, Bell, LogOut, Compass, Search } from 'lucide-react';
+import { Home, PlusSquare, Bell, LogOut, Compass, Search, Menu } from 'lucide-react';
+import { AnimatedThemeToggler } from '@/registry/magicui/animated-theme-toggler';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import logoIconUrl from '@/assets/logo.png';
@@ -60,7 +61,9 @@ function NavItem({ label, icon, isActive, href, badge, onClick }: NavItemProps) 
         onClick={onClick}
         className={cn(
           'relative flex items-center justify-center w-11 h-11 rounded-xl transition-all duration-200',
-          isActive ? 'bg-gray-100 text-black' : 'text-black/70 hover:bg-gray-100 hover:text-black'
+          isActive 
+            ? 'bg-gray-100 text-black dark:bg-white/10 dark:text-white' 
+            : 'text-black/70 dark:text-white/70 hover:bg-gray-100 dark:hover:bg-white/10 hover:text-black dark:hover:text-white'
         )}
       >
         <div className="relative">
@@ -84,6 +87,7 @@ export default function Sidebar() {
   const { unreadCount, markAllAsRead } = useNotificationContext();
   const { user } = useAuthContext();
   const [profileAvatar, setProfileAvatar] = useState<string | null>(null);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
 
   const isEmprendedor = user?.user_metadata?.role === 'emprendedor';
 
@@ -127,14 +131,14 @@ export default function Sidebar() {
 
   return (
     <aside
-      className="hidden lg:flex flex-col w-[72px] h-screen border-r border-gray-100 bg-white px-3 fixed top-0 left-0 z-50"
+      className="hidden lg:flex flex-col w-[72px] h-screen border-r border-gray-100 dark:border-white/10 bg-white dark:bg-black px-3 fixed top-0 left-0 z-50"
       style={{ overflow: 'visible', paddingTop: 'clamp(12px, 2vh, 32px)', paddingBottom: 'clamp(12px, 2vh, 32px)' }}
     >
       {/* ── Logo (top) ─────────────────────────────────────── */}
       <Tooltip label="CampusMarket">
         <Link
           to="/home"
-          className="flex items-center justify-center w-11 h-11 rounded-xl hover:bg-gray-100 transition-colors mx-auto"
+          className="flex items-center justify-center w-11 h-11 rounded-xl hover:bg-gray-100 dark:hover:bg-white/10 transition-colors mx-auto"
           style={{ marginBottom: 'clamp(8px, 2vh, 24px)' }}
         >
           <img src={logoIconUrl} alt="CampusMarket" className="w-8 h-8 object-contain" />
@@ -164,13 +168,13 @@ export default function Sidebar() {
             to="/profile"
             className={cn(
               'flex items-center justify-center w-11 h-11 rounded-xl transition-all duration-200',
-              isActive('/profile') ? 'bg-gray-100' : 'hover:bg-gray-100'
+              isActive('/profile') ? 'bg-gray-100 dark:bg-white/10' : 'hover:bg-gray-100 dark:hover:bg-white/10'
             )}
           >
             <div
               className={cn(
                 'w-7 h-7 rounded-full overflow-hidden border-2 transition-all',
-                isActive('/profile') ? 'border-black' : 'border-gray-300'
+                isActive('/profile') ? 'border-black dark:border-white' : 'border-gray-300 dark:border-white/20'
               )}
             >
               <img
@@ -184,15 +188,54 @@ export default function Sidebar() {
         </Tooltip>
       </nav>
 
-      {/* ── Logout (bottom) ────────────────────────────────── */}
+      {/* ── More & Logout (bottom) ────────────────────────── */}
       <div
-        className="flex justify-center"
-        style={{ overflow: 'visible', paddingTop: 'clamp(8px, 2vh, 20px)' }}
+        className="flex flex-col items-center gap-2 pt-4 border-t border-gray-100 dark:border-white/10 w-full"
+        style={{ overflow: 'visible' }}
       >
+        {/* More Button */}
+        <div className="relative">
+          <Tooltip label="Más">
+            <button
+              onClick={() => setShowMoreMenu(!showMoreMenu)}
+              className={cn(
+                "flex items-center justify-center w-11 h-11 rounded-xl transition-colors",
+                showMoreMenu ? "bg-gray-100 text-black dark:bg-white/10 dark:text-white" : "text-black/70 dark:text-white/70 hover:bg-gray-100 dark:hover:bg-white/10 hover:text-black dark:hover:text-white"
+              )}
+            >
+              <Menu size={24} strokeWidth={showMoreMenu ? 2.5 : 2} />
+            </button>
+          </Tooltip>
+
+          {/* More Menu Popover */}
+          <AnimatePresence>
+            {showMoreMenu && (
+              <>
+                <motion.div
+                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                  className="absolute bottom-full left-0 mb-2 w-64 bg-white dark:bg-[#262626] rounded-2xl shadow-2xl border border-gray-100 dark:border-white/10 p-2 z-[100]"
+                >
+                  <div className="flex flex-col gap-1">
+                    <AnimatedThemeToggler />
+                  </div>
+                </motion.div>
+                {/* Backdrop to close */}
+                <div 
+                  className="fixed inset-0 z-[90]" 
+                  onClick={() => setShowMoreMenu(false)}
+                />
+              </>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* Logout */}
         <Tooltip label="Cerrar sesión">
           <button
             onClick={handleLogout}
-            className="flex items-center justify-center w-11 h-11 rounded-xl text-red-500 hover:bg-red-50 transition-colors"
+            className="flex items-center justify-center w-11 h-11 rounded-xl text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
           >
             <LogOut size={22} />
           </button>
