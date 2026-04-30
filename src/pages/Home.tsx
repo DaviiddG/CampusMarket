@@ -3,7 +3,7 @@ import MobileContainer from '@/components/layout/MobileContainer';
 import ProductCard from '@/components/home/ProductCard';
 import BottomNav from '@/components/layout/BottomNav';
 import NotificationsDrawer from '@/components/home/NotificationsDrawer';
-import { Bell, ShoppingBag } from 'lucide-react';
+import { Bell } from 'lucide-react';
 import logoUrl from '@/assets/logo.png';
 import { useState } from 'react';
 import { motion } from 'motion/react';
@@ -16,7 +16,7 @@ export default function Home() {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
 
   return (
-    <MobileContainer justifyCenter={false}>
+    <MobileContainer className="bg-white" justifyCenter={false}>
       {/* Top Header Section - Mobile Only */}
       <div className="w-full flex lg:hidden flex-col items-center pt-4 px-4">
         {/* Header Bar */}
@@ -61,7 +61,7 @@ export default function Home() {
         <div className="max-w-[600px] mx-auto w-full">
           {posts.length === 0 ? (
             <div className="flex flex-col items-center justify-center p-8 text-center text-gray-500 h-[60%]">
-              <ShoppingBag size={40} className="mb-4 opacity-50" />
+              <Search size={40} className="mb-4 opacity-50" />
               <p className="font-roboto mb-2">No hay publicaciones aún.</p>
               <p className="font-poppins font-bold text-sm">¡Sé el primero en publicar el tuyo!</p>
             </div>

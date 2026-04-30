@@ -5,28 +5,9 @@
 
 @layer base {
   body {
-    @apply m-0 p-0 font-inter text-darkText flex justify-center items-center min-h-screen relative;
-    background-color: #F3F3F3;
-    transition: background-color 0.3s, color 0.3s;
+    @apply m-0 p-0 font-inter bg-[#F3F3F3] text-darkText flex justify-center items-center min-h-screen relative;
   }
 }
-
-/* Tailwind darkMode:'class' puts 'dark' on <html>, so selectors must be html.dark */
-html.dark body {
-  background-color: #000000 !important;
-  color: white !important;
-}
-
-html.dark #root {
-  background-color: #000000 !important;
-  transition: background-color 0.3s;
-}
-
-html #root {
-  transition: background-color 0.3s;
-}
-
-
 
 @layer components {
   .minimalist-input {
@@ -101,24 +82,10 @@ html #root {
 }
 
 #root {
-  @apply w-full min-h-[100dvh] relative overflow-hidden flex flex-col;
-  background-color: #F3F3F3;
-  transition: background-color 0.3s;
+  @apply w-full min-h-[100dvh] bg-black relative overflow-hidden flex flex-col;
 }
 
 /* Reset input default styles */
 input:focus {
   outline: none;
-}
-
-/* View Transitions API support for AnimatedThemeToggler */
-::view-transition-old(root),
-::view-transition-new(root) {
-  animation: none;
-  mix-blend-mode: normal;
-}
-
-/* Scoped to AnimatedThemeToggler */
-html[data-theme-vt="1"]::view-transition-group(root) {
-  animation-duration: var(--theme-vt-dur, 600ms);
 }
