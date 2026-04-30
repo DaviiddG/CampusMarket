@@ -5,6 +5,7 @@ import { useNotificationContext, type Notification } from '@/contexts/Notificati
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { AnimatedList } from '@/components/ui/animated-list';
+import { useNavigate } from 'react-router-dom';
 
 interface NotificationsDrawerProps {
   isOpen: boolean;
@@ -13,6 +14,7 @@ interface NotificationsDrawerProps {
 
 export default function NotificationsDrawer({ isOpen, onClose }: NotificationsDrawerProps) {
   const { notifications, loading, markAllAsRead, markAsRead } = useNotificationContext();
+  const navigate = useNavigate();
   
   // Automatically mark all as read when opening the drawer
   useEffect(() => {
@@ -38,6 +40,12 @@ export default function NotificationsDrawer({ isOpen, onClose }: NotificationsDr
       case 'comment': return 'comentó tu publicación.';
       case 'share': return 'compartió tu publicación.';
     }
+  };
+
+  const handleActorClick = (e: React.MouseEvent, actorId: string) => {
+    e.stopPropagation();
+    onClose(); // Close the drawer before navigating
+    navigate(`/user/${actorId}`);
   };
 
   return (
@@ -96,7 +104,10 @@ export default function NotificationsDrawer({ isOpen, onClose }: NotificationsDr
                       onClick={() => markAsRead(notif.id)}
                     >
                     <div className="relative flex-shrink-0">
-                      <div className="w-12 h-12 rounded-full overflow-hidden border border-gray-100 shadow-sm">
+                      <div 
+                        className="w-12 h-12 rounded-full overflow-hidden border border-gray-100 shadow-sm cursor-pointer"
+                        onClick={(e) => handleActorClick(e, notif.actor_id)}
+                      >
                         <img 
                           src={notif.actor_avatar || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI0UyRThGMCIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNDAiIHI9IjIwIiBmaWxsPSIjOTRBM0I4Ii8+PHBhdGggZD0iTTIwIDEwMGEzMCAzMCAwIDAgMSA2MCAwIiBmaWxsPSIjOTRBM0I4Ii8+PC9zdmc+'} 
                           alt={notif.actor_name} 
@@ -111,7 +122,12 @@ export default function NotificationsDrawer({ isOpen, onClose }: NotificationsDr
                     
                     <div className="flex-1 min-w-0">
                       <p className="text-[13px] font-roboto leading-snug">
-                        <span className="font-bold text-black hover:underline cursor-pointer">{notif.actor_name}</span>{' '}
+                        <span 
+                          className="font-bold text-black hover:underline cursor-pointer"
+                          onClick={(e) => handleActorClick(e, notif.actor_id)}
+                        >
+                          {notif.actor_name}
+                        </span>{' '}
                         <span className="text-gray-600 font-light">{getMessage(notif)}</span>
                       </p>
                       <p className="text-[11px] text-gray-400 font-roboto mt-0.5">

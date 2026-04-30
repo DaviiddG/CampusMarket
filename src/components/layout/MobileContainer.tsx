@@ -9,13 +9,15 @@ interface MobileContainerProps {
     className?: string;
     justifyCenter?: boolean;
     showSidebars?: boolean;
+    hideRightSidebar?: boolean;
 }
 
-export default function MobileContainer({ 
-    children, 
-    className = "bg-white", 
+export default function MobileContainer({
+    children,
+    className = "bg-white",
     justifyCenter = true,
-    showSidebars = true 
+    showSidebars = true,
+    hideRightSidebar = false,
 }: MobileContainerProps) {
     const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
 
@@ -42,33 +44,39 @@ export default function MobileContainer({
     }
 
     // App pages: full sidebar layout
+    // Key: NO overflow-y-auto / h-screen on inner containers — the browser window scrolls naturally
+    // so the scrollbar appears at the far right edge of the viewport (like Instagram).
+    // RightSidebar uses sticky top-0 so it follows the scroll.
     return (
         <div className="min-h-screen w-full bg-white lg:bg-[#F8F9FA] flex lg:flex-row">
-            {/* Desktop Sidebar (Left) */}
+            {/* Desktop Sidebar (Left) — fixed, doesn't participate in flex flow */}
             <Sidebar />
 
-            {/* Main Content Area */}
+            {/* Main scrollable area — offset by sidebar width */}
             <div
                 className={cn(
-                    "w-full h-full min-h-screen lg:min-h-0 lg:h-screen lg:flex-1 relative flex justify-center overflow-hidden",
+                    "w-full lg:ml-[72px] flex justify-center",
                     className
                 )}
             >
-                <div className="flex w-full max-w-full xl:max-w-[1200px] justify-center xl:gap-8 2xl:gap-16 px-0 lg:px-4">
+                <div className="flex w-full max-w-full xl:max-w-[1200px] justify-center xl:gap-8 2xl:gap-16 px-0 lg:px-4 items-start">
                     {/* Page Content */}
                     <main className={cn(
-                        "flex-1 w-full max-w-[600px] lg:max-w-none flex flex-col items-center overflow-y-auto no-scrollbar",
-                        justifyCenter ? 'justify-center' : 'justify-start'
+                        "flex-1 w-full flex flex-col items-center",
+                        hideRightSidebar
+                            ? 'max-w-[700px] lg:max-w-[750px] xl:max-w-[800px]'
+                            : 'max-w-[600px] lg:max-w-none',
+                        justifyCenter ? 'justify-center min-h-screen' : 'justify-start'
                     )}>
                         {children}
                     </main>
 
-                    {/* Desktop Right Sidebar */}
-                    <RightSidebar />
+                    {/* Desktop Right Sidebar — sticky, hidden on profile pages */}
+                    {!hideRightSidebar && <RightSidebar />}
                 </div>
             </div>
 
-            {/* Global Notifications Drawer - accessible from any page */}
+            {/* Global Notifications Drawer */}
             <NotificationsDrawer
                 isOpen={isNotificationsOpen}
                 onClose={() => setIsNotificationsOpen(false)}

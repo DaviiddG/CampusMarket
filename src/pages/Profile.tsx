@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MobileContainer from '@/components/layout/MobileContainer';
 import BottomNav from '@/components/layout/BottomNav';
-import { ChevronLeft, LogOut, Grid3X3, Bookmark, Settings, Star } from 'lucide-react';
+import { ChevronLeft, LogOut, Grid3X3, Bookmark, Settings, Star, Instagram, Facebook, MessageCircle } from 'lucide-react';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useFeedContext, type Post, type Review } from '@/contexts/FeedContext';
@@ -15,14 +15,22 @@ export default function Profile() {
   const navigate = useNavigate();
   const { user } = useAuthContext();
   const { signOut } = useAuth();
-  const { posts, savedPostIds, getReviews } = useFeedContext();
+  const { posts, savedPostIds, getReviews, getReviewsGiven } = useFeedContext();
   
   const [activeTab, setActiveTab] = useState<'posts' | 'saved' | 'reviews'>('posts');
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [reviewsGiven, setReviewsGiven] = useState<Review[]>([]);
   const [followersCount, setFollowersCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [profileAvatar, setProfileAvatar] = useState<string | null>(null);
+  const [profileData, setProfileData] = useState<{
+    whatsapp?: string;
+    instagram?: string;
+    facebook?: string;
+    location?: string;
+    bio?: string;
+  }>({});
   const [isRemovingAvatar, setIsRemovingAvatar] = useState(false);
   const [showPhotoMenu, setShowPhotoMenu] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -30,7 +38,14 @@ export default function Profile() {
   
   const displayName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Usuario CampusMarket';
   const role = user?.user_metadata?.role || 'usuario';
+  const isUsuario = role === 'usuario';
   const avatarUrl = profileAvatar || user?.user_metadata?.avatar_url || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI0UyRThGMCIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNDAiIHI9IjIwIiBmaWxsPSIjOTRBM0I4Ii8+PHBhdGggZD0iTTIwIDEwMGEzMCAzMCAwIDAgMSA2MCAwIiBmaWxsPSIjOTRBM0I4Ii8+PC9zdmc+';
+
+  useEffect(() => {
+    if (isUsuario) {
+      setActiveTab('saved');
+    }
+  }, [isUsuario]);
 
   useEffect(() => {
     if (!user) return;
@@ -50,23 +65,37 @@ export default function Profile() {
       if (following !== null) setFollowingCount(following);
     };
 
-    // Fetch profile avatar from profiles table
-    const fetchProfileAvatar = async () => {
+    // Fetch profile data from profiles table
+    const fetchProfileData = async () => {
       const { data } = await supabase
         .from('profiles')
-        .select('avatar_url')
+        .select('*')
         .eq('id', user.id)
         .single();
-      if (data?.avatar_url) setProfileAvatar(data.avatar_url);
+      if (data) {
+        if (data.avatar_url) setProfileAvatar(data.avatar_url);
+        setProfileData({
+          whatsapp: data.whatsapp,
+          instagram: data.instagram,
+          facebook: data.facebook,
+          location: data.location,
+          bio: data.bio
+        });
+      }
     };
 
     const fetchReviews = async () => {
-      const data = await getReviews(user.id);
-      setReviews(data);
+      if (isUsuario) {
+        const dataGiven = await getReviewsGiven(user.id);
+        setReviewsGiven(dataGiven);
+      } else {
+        const data = await getReviews(user.id);
+        setReviews(data);
+      }
     };
 
     fetchFollows();
-    fetchProfileAvatar();
+    fetchProfileData();
     fetchReviews();
 
     // Realtime subscription for follows
@@ -196,7 +225,7 @@ export default function Profile() {
   const displayPosts = activeTab === 'posts' ? myPosts : mySavedPosts;
 
   return (
-    <MobileContainer className="bg-white" justifyCenter={false}>
+    <MobileContainer className="bg-white" justifyCenter={false} hideRightSidebar>
       {/* Desktop Main Content Container */}
       <div className="w-full pb-[70px] lg:pb-10">
         <div className="max-w-[700px] mx-auto w-full">
@@ -306,10 +335,17 @@ export default function Profile() {
               </div>
 
               <div className="flex justify-between md:justify-start md:gap-10 items-center">
-                <div className="flex flex-col md:flex-row md:gap-1 items-center">
-                  <span className="font-roboto font-bold text-[16px] text-black">{myPosts.length}</span>
-                  <span className="font-roboto font-light text-[12px] md:text-[14px] text-grayText md:text-black">Publicaciones</span>
-                </div>
+                {isUsuario ? (
+                  <div className="flex flex-col md:flex-row md:gap-1 items-center">
+                    <span className="font-roboto font-bold text-[16px] text-black">{reviewsGiven.length}</span>
+                    <span className="font-roboto font-light text-[12px] md:text-[14px] text-grayText md:text-black">Reseñas Dadas</span>
+                  </div>
+                ) : (
+                  <div className="flex flex-col md:flex-row md:gap-1 items-center">
+                    <span className="font-roboto font-bold text-[16px] text-black">{myPosts.length}</span>
+                    <span className="font-roboto font-light text-[12px] md:text-[14px] text-grayText md:text-black">Publicaciones</span>
+                  </div>
+                )}
                 <div className="flex flex-col md:flex-row md:gap-1 items-center">
                   <span className="font-roboto font-bold text-[16px] text-black">{followersCount}</span>
                   <span className="font-roboto font-light text-[12px] md:text-[14px] text-grayText md:text-black">Seguidores</span>
@@ -328,10 +364,54 @@ export default function Profile() {
             {displayName} {role === 'emprendedor' && <span className="opacity-0">✨</span>}
           </h2>
           <p className="font-roboto font-light text-[14px] leading-[18px] text-black">
-            {user?.user_metadata?.bio || (role === 'emprendedor' 
+            {profileData.bio || user?.user_metadata?.bio || (role === 'emprendedor' 
               ? 'Emprendimiento universitario enfocado en crecer y conectar con todos los estudiantes. 🚀' 
               : 'Apoyando el talento universitario y descubriendo nuevos productos aquí en la U. 🎓')}
           </p>
+          {profileData.location && (
+            <p className="font-roboto text-[13px] text-gray-500 mt-1">
+              📍 {profileData.location}
+            </p>
+          )}
+
+          {/* Social Links */}
+          {(profileData.whatsapp || profileData.instagram || profileData.facebook) && (
+            <div className="flex items-center gap-4 pt-3">
+              {profileData.whatsapp && (
+                <a 
+                  href={`https://wa.me/${profileData.whatsapp.replace(/\+/g, '')}`} 
+                  target="_blank" 
+                  rel="noreferrer" 
+                  className="p-2 bg-[#25D366]/10 text-[#25D366] rounded-xl hover:bg-[#25D366]/20 transition-colors"
+                  title="WhatsApp"
+                >
+                  <MessageCircle size={22} />
+                </a>
+              )}
+              {profileData.instagram && (
+                <a 
+                  href={`https://instagram.com/${profileData.instagram}`} 
+                  target="_blank" 
+                  rel="noreferrer" 
+                  className="p-2 bg-[#E1306C]/10 text-[#E1306C] rounded-xl hover:bg-[#E1306C]/20 transition-colors"
+                  title="Instagram"
+                >
+                  <Instagram size={22} />
+                </a>
+              )}
+              {profileData.facebook && (
+                <a 
+                  href={`https://facebook.com/${profileData.facebook}`} 
+                  target="_blank" 
+                  rel="noreferrer" 
+                  className="p-2 bg-[#1877F2]/10 text-[#1877F2] rounded-xl hover:bg-[#1877F2]/20 transition-colors"
+                  title="Facebook"
+                >
+                  <Facebook size={22} />
+                </a>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Action Buttons */}
@@ -349,35 +429,44 @@ export default function Profile() {
         </div>
 
         {/* Tabs */}
-        <div className="flex items-center justify-around w-full border-t border-gray-200">
-          <button 
-            className="flex-1 py-3 flex justify-center items-center relative"
-            onClick={() => setActiveTab('posts')}
-          >
-            <Grid3X3 size={24} className={cn("transition-colors", activeTab === 'posts' ? "text-black" : "text-gray-400")} strokeWidth={activeTab === 'posts' ? 2 : 1.5} />
-            {activeTab === 'posts' && (
-              <motion.div layoutId="tab-indicator" className="absolute bottom-0 w-full h-[2px] bg-black" />
-            )}
-          </button>
-          <button 
-            className="flex-1 py-3 flex justify-center items-center relative"
-            onClick={() => setActiveTab('saved')}
-          >
-            <Bookmark size={24} className={cn("transition-colors", activeTab === 'saved' ? "text-black" : "text-gray-400")} strokeWidth={activeTab === 'saved' ? 2 : 1.5} />
-            {activeTab === 'saved' && (
-              <motion.div layoutId="tab-indicator" className="absolute bottom-0 w-full h-[2px] bg-black" />
-            )}
-          </button>
-          <button 
-            className="flex-1 py-3 flex justify-center items-center relative"
-            onClick={() => setActiveTab('reviews')}
-          >
-            <Star size={24} className={cn("transition-colors", activeTab === 'reviews' ? "text-black" : "text-gray-400")} strokeWidth={activeTab === 'reviews' ? 2 : 1.5} />
-            {activeTab === 'reviews' && (
-              <motion.div layoutId="tab-indicator" className="absolute bottom-0 w-full h-[2px] bg-black" />
-            )}
-          </button>
-        </div>
+        {!isUsuario && (
+          <div className="flex items-center justify-around w-full border-t border-gray-200">
+            <button 
+              className="flex-1 py-3 flex justify-center items-center relative"
+              onClick={() => setActiveTab('posts')}
+            >
+              <Grid3X3 size={24} className={cn("transition-colors", activeTab === 'posts' ? "text-black" : "text-gray-400")} strokeWidth={activeTab === 'posts' ? 2 : 1.5} />
+              {activeTab === 'posts' && (
+                <motion.div layoutId="tab-indicator" className="absolute bottom-0 w-full h-[2px] bg-black" />
+              )}
+            </button>
+            <button 
+              className="flex-1 py-3 flex justify-center items-center relative"
+              onClick={() => setActiveTab('saved')}
+            >
+              <Bookmark size={24} className={cn("transition-colors", activeTab === 'saved' ? "text-black" : "text-gray-400")} strokeWidth={activeTab === 'saved' ? 2 : 1.5} />
+              {activeTab === 'saved' && (
+                <motion.div layoutId="tab-indicator" className="absolute bottom-0 w-full h-[2px] bg-black" />
+              )}
+            </button>
+            <button 
+              className="flex-1 py-3 flex justify-center items-center relative"
+              onClick={() => setActiveTab('reviews')}
+            >
+              <Star size={24} className={cn("transition-colors", activeTab === 'reviews' ? "text-black" : "text-gray-400")} strokeWidth={activeTab === 'reviews' ? 2 : 1.5} />
+              {activeTab === 'reviews' && (
+                <motion.div layoutId="tab-indicator" className="absolute bottom-0 w-full h-[2px] bg-black" />
+              )}
+            </button>
+          </div>
+        )}
+        
+        {isUsuario && (
+          <div className="w-full border-t border-gray-200 py-3 flex justify-center items-center">
+            <Bookmark size={24} className="text-black" strokeWidth={2} />
+            <span className="ml-2 font-roboto font-bold text-[14px]">Guardados</span>
+          </div>
+        )}
 
         {/* Grid Content */}
         <AnimatePresence mode="wait">
@@ -387,19 +476,21 @@ export default function Profile() {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: activeTab === 'posts' ? 20 : -20 }}
             transition={{ duration: 0.15, ease: 'easeOut' }}
-            drag="x"
-            dragConstraints={{ left: 0, right: 0 }}
-            dragElastic={0.2}
-            onDragEnd={(_, { offset }) => {
-              const swipe = offset.x;
-              const TABS: Array<'posts' | 'saved' | 'reviews'> = ['posts', 'saved', 'reviews'];
-              const currentIndex = TABS.indexOf(activeTab);
-              if (swipe < -40 && currentIndex < TABS.length - 1) {
-                setActiveTab(TABS[currentIndex + 1]);
-              } else if (swipe > 40 && currentIndex > 0) {
-                setActiveTab(TABS[currentIndex - 1]);
+            {...(!isUsuario ? {
+              drag: "x" as const,
+              dragConstraints: { left: 0, right: 0 },
+              dragElastic: 0.2,
+              onDragEnd: (_: unknown, { offset }: { offset: { x: number } }) => {
+                const swipe = offset.x;
+                const TABS: Array<'posts' | 'saved' | 'reviews'> = ['posts', 'saved', 'reviews'];
+                const currentIndex = TABS.indexOf(activeTab as 'posts' | 'saved' | 'reviews');
+                if (swipe < -40 && currentIndex < TABS.length - 1) {
+                  setActiveTab(TABS[currentIndex + 1]);
+                } else if (swipe > 40 && currentIndex > 0) {
+                  setActiveTab(TABS[currentIndex - 1]);
+                }
               }
-            }}
+            } : {})}
             className="w-full min-h-[300px]"
           >
             {activeTab === 'reviews' ? (

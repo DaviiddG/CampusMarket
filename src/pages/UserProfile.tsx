@@ -16,21 +16,23 @@ export default function UserProfile() {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
   const { user: currentUser } = useAuthContext();
-  const { posts, getReviews } = useFeedContext();
+  const { posts, getReviews, getReviewsGiven } = useFeedContext();
 
   const [targetUser, setTargetUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isFollowing, setIsFollowing] = useState(false);
   const [followersCount, setFollowersCount] = useState(0);
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [reviewsGiven, setReviewsGiven] = useState<Review[]>([]);
   const [showReviewsModal, setShowReviewsModal] = useState(false);
   const [selectedPost, setSelectedPost] = useState<any>(null);
   
   const userPosts = posts.filter(p => p.user_id === userId);
   const popular = userPosts.slice().reverse().slice(0, 4);
 
-  // Compute real average rating from reviews
-  const rating = reviews.length > 0 
+  // Compute real average rating from reviews (only for business)
+  const isUsuario = targetUser?.role === 'usuario';
+  const rating = !isUsuario && reviews.length > 0 
     ? Math.round((reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length) * 10) / 10 
     : 0;
 
@@ -60,6 +62,7 @@ export default function UserProfile() {
             whatsapp: profileData.whatsapp || null,
             instagram: profileData.instagram || null,
             facebook: profileData.facebook || null,
+            role: profileData.role || 'usuario',
           });
         } else if (post) {
           // No profiles row yet — show basic info from post
@@ -72,6 +75,7 @@ export default function UserProfile() {
             whatsapp: null,
             instagram: null,
             facebook: null,
+            role: 'usuario',
           });
         }
 
@@ -107,9 +111,13 @@ export default function UserProfile() {
 
   // Fetch reviews separately
   useEffect(() => {
-    if (!userId) return;
-    getReviews(userId).then(setReviews);
-  }, [userId]);
+    if (!userId || !targetUser) return;
+    if (targetUser.role === 'usuario') {
+      getReviewsGiven(userId).then(setReviewsGiven);
+    } else {
+      getReviews(userId).then(setReviews);
+    }
+  }, [userId, targetUser?.role]);
 
   const handleFollow = async () => {
     if (!currentUser || !userId) return;
@@ -155,14 +163,14 @@ export default function UserProfile() {
 
   if (loading && !targetUser) {
     return (
-      <MobileContainer className="bg-white flex items-center justify-center">
+      <MobileContainer className="bg-white flex items-center justify-center" hideRightSidebar>
         <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
       </MobileContainer>
     );
   }
 
   return (
-    <MobileContainer className="bg-white" justifyCenter={false}>
+    <MobileContainer className="bg-white" justifyCenter={false} hideRightSidebar>
       {/* Main Content Area */}
       <div className="w-full pb-[80px] lg:pb-10">
         <div className="max-w-[800px] mx-auto w-full">
@@ -180,14 +188,18 @@ export default function UserProfile() {
 
           {/* Profile Info - Responsive Header */}
           <div className="flex flex-col lg:flex-row items-center lg:items-start gap-8 lg:gap-14 px-6 mt-6 lg:mt-12">
-            {/* Avatar */}
-            <div className="w-24 h-24 lg:w-40 lg:h-40 rounded-full overflow-hidden border-[3px] border-primary/10 shadow-lg flex-shrink-0">
-              <img 
-                src={targetUser?.avatarUrl || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI0UyRThGMCIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNDAiIHI9IjIwIiBmaWxsPSIjOTRBM0I4Ii8+PHBhdGggZD0iTTIwIDEwMGEzMCAzMCAwIDAgMSA2MCAwIiBmaWxsPSIjOTRBM0I4Ii8+PC9zdmc+'} 
-                alt="Profile Avatar" 
-                className="w-full h-full object-cover"
-                onError={(e) => { (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI0UyRThGMCIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNDAiIHI9IjIwIiBmaWxsPSIjOTRBM0I4Ii8+PHBhdGggZD0iTTIwIDEwMGEzMCAzMCAwIDAgMSA2MCAwIiBmaWxsPSIjOTRBM0I4Ii8+PC9zdmc+'; }}
-              />
+            {/* Avatar Container with Online Indicator */}
+            <div className="relative flex-shrink-0">
+              <div className="w-24 h-24 lg:w-40 lg:h-40 rounded-full overflow-hidden border-[3px] border-primary/10 shadow-lg">
+                <img 
+                  src={targetUser?.avatarUrl || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI0UyRThGMCIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNDAiIHI9IjIwIiBmaWxsPSIjOTRBM0I4Ii8+PHBhdGggZD0iTTIwIDEwMGEzMCAzMCAwIDAgMSA2MCAwIiBmaWxsPSIjOTRBM0I4Ii8+PC9zdmc+'} 
+                  alt="Profile Avatar" 
+                  className="w-full h-full object-cover"
+                  onError={(e) => { (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI0UyRThGMCIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNDAiIHI9IjIwIiBmaWxsPSIjOTRBM0I4Ii8+PHBhdGggZD0iTTIwIDEwMGEzMCAzMCAwIDAgMSA2MCAwIiBmaWxsPSIjOTRBM0I4Ii8+PC9zdmc+'; }}
+                />
+              </div>
+              {/* Indicador En Línea */}
+              <div className="absolute bottom-1 right-2 lg:bottom-3 lg:right-4 w-4 h-4 lg:w-5 lg:h-5 bg-green-500 border-[3px] border-white rounded-full" title="En línea" />
             </div>
             <div className="flex-1 flex flex-col items-center lg:items-start">
               <div className="flex flex-col lg:flex-row items-center gap-4 lg:gap-6 mb-6">
@@ -204,41 +216,53 @@ export default function UserProfile() {
                   >
                     {isFollowing ? 'Siguiendo' : 'Seguir'}
                   </button>
-                  <button 
-                    onClick={() => navigate(`/review/${userId}`)}
-                    className="px-6 py-1.5 bg-gray-100 hover:bg-gray-200 text-black font-roboto font-bold text-sm rounded-xl border border-gray-200 transition-all"
-                  >
-                    Reseñar
-                  </button>
+                  {!isUsuario && (
+                    <button 
+                      onClick={() => navigate(`/review/${userId}`)}
+                      className="px-6 py-1.5 bg-gray-100 hover:bg-gray-200 text-black font-roboto font-bold text-sm rounded-xl border border-gray-200 transition-all"
+                    >
+                      Reseñar
+                    </button>
+                  )}
                 </div>
               </div>
 
               {/* Stats & Bio */}
               <div className="flex flex-col items-center lg:items-start space-y-4">
                 <div className="flex gap-10">
-                  <div className="text-center lg:text-left">
-                    <p className="font-roboto font-bold text-lg text-black">{userPosts.length}</p>
-                    <p className="text-[12px] text-gray-400">Productos</p>
-                  </div>
+                  {isUsuario ? (
+                    <div className="text-center lg:text-left">
+                      <p className="font-roboto font-bold text-lg text-black">{reviewsGiven.length}</p>
+                      <p className="text-[12px] text-gray-400">Reseñas Dadas</p>
+                    </div>
+                  ) : (
+                    <div className="text-center lg:text-left">
+                      <p className="font-roboto font-bold text-lg text-black">{userPosts.length}</p>
+                      <p className="text-[12px] text-gray-400">Productos</p>
+                    </div>
+                  )}
                   <div className="text-center lg:text-left">
                     <p className="font-roboto font-bold text-lg text-black">{followersCount}</p>
                     <p className="text-[12px] text-gray-400">Seguidores</p>
                   </div>
-                  <div className="text-center lg:text-left">
-                    <div className="flex items-center gap-1">
-                      <Star size={16} className="fill-yellow-400 text-yellow-400" />
-                      <p className="font-roboto font-bold text-lg text-black">{rating}</p>
+                  {!isUsuario && (
+                    <div className="text-center lg:text-left">
+                      <div className="flex items-center gap-1">
+                        <Star size={16} className="fill-yellow-400 text-yellow-400" />
+                        <p className="font-roboto font-bold text-lg text-black">{rating}</p>
+                      </div>
+                      <p className="text-[12px] text-gray-400">Calificación</p>
                     </div>
-                    <p className="text-[12px] text-gray-400">Calificación</p>
-                  </div>
+                  )}
                 </div>
 
                 <div className="max-w-md text-center lg:text-left">
                   <p className="text-sm lg:text-[15px] text-gray-700 font-roboto leading-relaxed mb-1">{targetUser?.bio}</p>
-                  <p className="text-[12px] text-primary font-medium flex items-center justify-center lg:justify-start gap-1">
-                    <span className="w-1.5 h-1.5 bg-green-500 rounded-full" />
-                    {targetUser?.location}
-                  </p>
+                  {targetUser?.location && (
+                    <p className="text-[13px] text-gray-500 font-roboto mt-1">
+                      📍 {targetUser?.location}
+                    </p>
+                  )}
                 </div>
 
                 {/* Social Links - Only show if user has them set */}
@@ -246,7 +270,7 @@ export default function UserProfile() {
                   <div className="flex items-center gap-4 pt-2">
                     {targetUser?.whatsapp && (
                       <a 
-                        href={`https://wa.me/${targetUser.whatsapp}`} 
+                        href={`https://wa.me/${targetUser.whatsapp.replace(/\+/g, '')}`} 
                         target="_blank" 
                         rel="noreferrer" 
                         className="p-2 bg-[#25D366]/10 text-[#25D366] rounded-xl hover:bg-[#25D366]/20 transition-colors"
@@ -285,54 +309,60 @@ export default function UserProfile() {
           
           {/* Sections */}
           <div className="mt-8 space-y-10">
-            {/* Products */}
-            <section>
-              <div className="flex items-center justify-between px-6 mb-3">
-                <h3 className="font-roboto font-bold text-lg text-black">Productos</h3>
-                <button className="text-gray-400"><ChevronRight size={20} /></button>
-              </div>
-              <div className="grid grid-cols-3 gap-1 px-1">
-                {userPosts.map((post) => (
-                  <div key={post.id} onClick={() => setSelectedPost(post)} className="aspect-square bg-gray-50 overflow-hidden cursor-pointer">
-                    <img src={post.imageUrl} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="Product" />
+            {!isUsuario && (
+              <>
+                {/* Products */}
+                <section>
+                  <div className="flex items-center justify-between px-6 mb-3">
+                    <h3 className="font-roboto font-bold text-lg text-black">Productos</h3>
+                    <button className="text-gray-400"><ChevronRight size={20} /></button>
                   </div>
-                ))}
-              </div>
-              {userPosts.length === 0 && <p className="text-gray-400 text-sm italic px-6">No hay productos.</p>}
-            </section>
+                  <div className="grid grid-cols-3 gap-1 px-1">
+                    {userPosts.map((post) => (
+                      <div key={post.id} onClick={() => setSelectedPost(post)} className="aspect-square bg-gray-50 overflow-hidden cursor-pointer">
+                        <img src={post.imageUrl} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="Product" />
+                      </div>
+                    ))}
+                  </div>
+                  {userPosts.length === 0 && <p className="text-gray-400 text-sm italic px-6">No hay productos.</p>}
+                </section>
 
-            {/* Populares */}
-            <section>
-              <div className="flex items-center justify-between px-6 mb-3">
-                <h3 className="font-roboto font-bold text-lg text-black">Populares</h3>
-                <button className="text-gray-400"><ChevronRight size={20} /></button>
-              </div>
-              <div className="grid grid-cols-3 gap-1 px-1">
-                {popular.map((post) => (
-                  <div key={post.id + '_popular'} onClick={() => setSelectedPost(post)} className="aspect-square bg-gray-50 overflow-hidden cursor-pointer">
-                    <img src={post.imageUrl} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="Popular" />
+                {/* Populares */}
+                <section>
+                  <div className="flex items-center justify-between px-6 mb-3">
+                    <h3 className="font-roboto font-bold text-lg text-black">Populares</h3>
+                    <button className="text-gray-400"><ChevronRight size={20} /></button>
                   </div>
-                ))}
-              </div>
-              {popular.length === 0 && <p className="text-gray-400 text-sm italic px-6">No hay contenido popular.</p>}
-            </section>
+                  <div className="grid grid-cols-3 gap-1 px-1">
+                    {popular.map((post) => (
+                      <div key={post.id + '_popular'} onClick={() => setSelectedPost(post)} className="aspect-square bg-gray-50 overflow-hidden cursor-pointer">
+                        <img src={post.imageUrl} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="Popular" />
+                      </div>
+                    ))}
+                  </div>
+                  {popular.length === 0 && <p className="text-gray-400 text-sm italic px-6">No hay contenido popular.</p>}
+                </section>
+              </>
+            )}
 
             {/* Reseñas */}
             <section className="mb-10">
               <button 
                 onClick={() => {
-                  if (reviews.length > 0) setShowReviewsModal(true);
+                  if ((isUsuario ? reviewsGiven.length : reviews.length) > 0) setShowReviewsModal(true);
                 }}
                 className="w-full flex items-center justify-between px-6 mb-3 text-left group"
               >
-                <h3 className="font-roboto font-bold text-lg text-black group-hover:underline">Reseñas</h3>
-                <span className="text-[13px] text-gray-400 font-roboto">{reviews.length} reseñas</span>
+                <h3 className="font-roboto font-bold text-lg text-black group-hover:underline">
+                  {isUsuario ? 'Reseñas Escritas' : 'Reseñas'}
+                </h3>
+                <span className="text-[13px] text-gray-400 font-roboto">{(isUsuario ? reviewsGiven.length : reviews.length)} reseñas</span>
               </button>
               
-              {reviews.length > 1 ? (
+              {(isUsuario ? reviewsGiven.length : reviews.length) > 1 ? (
                 <div onClick={() => setShowReviewsModal(true)} className="cursor-pointer">
                   <Marquee pauseOnHover className="[--duration:25s] [--gap:1rem]">
-                    {reviews.map((review) => (
+                    {(isUsuario ? reviewsGiven : reviews).map((review) => (
                       <div
                         key={review.id}
                         onClick={(e) => { e.stopPropagation(); setShowReviewsModal(true); }}
@@ -341,13 +371,13 @@ export default function UserProfile() {
                         <div className="flex items-center gap-3 mb-3">
                           <div className="w-9 h-9 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
                             <img
-                              src={review.reviewer_avatar || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI0UyRThGMCIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNDAiIHI9IjIwIiBmaWxsPSIjOTRBM0I4Ii8+PHBhdGggZD0iTTIwIDEwMGEzMCAzMCAwIDAgMSA2MCAwIiBmaWxsPSIjOTRBM0I4Ii8+PC9zdmc+'}
-                              alt={review.reviewer_name}
+                              src={isUsuario ? review.image_url || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI0UyRThGMCIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNDAiIHI9IjIwIiBmaWxsPSIjOTRBM0I4Ii8+PHBhdGggZD0iTTIwIDEwMGEzMCAzMCAwIDAgMSA2MCAwIiBmaWxsPSIjOTRBM0I4Ii8+PC9zdmc+' : review.reviewer_avatar || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI0UyRThGMCIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNDAiIHI9IjIwIiBmaWxsPSIjOTRBM0I4Ii8+PHBhdGggZD0iTTIwIDEwMGEzMCAzMCAwIDAgMSA2MCAwIiBmaWxsPSIjOTRBM0I4Ii8+PC9zdmc+'}
+                              alt={isUsuario ? 'Negocio' : review.reviewer_name}
                               className="w-full h-full object-cover"
                             />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="font-roboto font-medium text-[13px] text-black truncate">{review.reviewer_name || 'Usuario'}</p>
+                            <p className="font-roboto font-medium text-[13px] text-black truncate">{isUsuario ? 'Ver reseña' : review.reviewer_name || 'Usuario'}</p>
                             <div className="flex gap-0.5">
                               {[1, 2, 3, 4, 5].map(s => (
                                 <Star
@@ -371,7 +401,7 @@ export default function UserProfile() {
                     ))}
                   </Marquee>
                 </div>
-              ) : reviews.length === 1 ? (
+              ) : (isUsuario ? reviewsGiven.length : reviews.length) === 1 ? (
                 <div 
                   className="px-6 cursor-pointer"
                   onClick={() => setShowReviewsModal(true)}
@@ -380,44 +410,46 @@ export default function UserProfile() {
                     <div className="flex items-center gap-3 mb-3">
                       <div className="w-9 h-9 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
                         <img
-                          src={reviews[0].reviewer_avatar || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI0UyRThGMCIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNDAiIHI9IjIwIiBmaWxsPSIjOTRBM0I4Ii8+PHBhdGggZD0iTTIwIDEwMGEzMCAzMCAwIDAgMSA2MCAwIiBmaWxsPSIjOTRBM0I4Ii8+PC9zdmc+'}
-                          alt={reviews[0].reviewer_name}
+                          src={isUsuario ? (isUsuario ? reviewsGiven[0] : reviews[0]).image_url || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI0UyRThGMCIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNDAiIHI9IjIwIiBmaWxsPSIjOTRBM0I4Ii8+PHBhdGggZD0iTTIwIDEwMGEzMCAzMCAwIDAgMSA2MCAwIiBmaWxsPSIjOTRBM0I4Ii8+PC9zdmc+' : (isUsuario ? reviewsGiven[0] : reviews[0]).reviewer_avatar || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI0UyRThGMCIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNDAiIHI9IjIwIiBmaWxsPSIjOTRBM0I4Ii8+PHBhdGggZD0iTTIwIDEwMGEzMCAzMCAwIDAgMSA2MCAwIiBmaWxsPSIjOTRBM0I4Ii8+PC9zdmc+'}
+                          alt={isUsuario ? 'Negocio' : (isUsuario ? reviewsGiven[0] : reviews[0]).reviewer_name}
                           className="w-full h-full object-cover"
                         />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-roboto font-medium text-[13px] text-black truncate">{reviews[0].reviewer_name || 'Usuario'}</p>
+                        <p className="font-roboto font-medium text-[13px] text-black truncate">{isUsuario ? 'Ver reseña' : (isUsuario ? reviewsGiven[0] : reviews[0]).reviewer_name || 'Usuario'}</p>
                         <div className="flex gap-0.5">
                           {[1, 2, 3, 4, 5].map(s => (
                             <Star
                               key={s}
                               size={12}
-                              className={s <= reviews[0].rating ? 'fill-yellow-400 text-yellow-400' : 'fill-gray-200 text-gray-200'}
+                              className={s <= (isUsuario ? reviewsGiven[0] : reviews[0]).rating ? 'fill-yellow-400 text-yellow-400' : 'fill-gray-200 text-gray-200'}
                             />
                           ))}
                         </div>
                       </div>
                     </div>
-                    {reviews[0].content && (
+                    {(isUsuario ? reviewsGiven[0] : reviews[0]).content && (
                       <p className="font-roboto font-light text-[13px] text-gray-600 leading-relaxed">
-                        {reviews[0].content}
+                        {(isUsuario ? reviewsGiven[0] : reviews[0]).content}
                       </p>
                     )}
                     <p className="text-[10px] text-gray-300 mt-2 font-roboto">
-                      {new Date(reviews[0].created_at).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      {new Date((isUsuario ? reviewsGiven[0] : reviews[0]).created_at).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </p>
                   </div>
                 </div>
               ) : (
                 <div className="px-6 py-8 text-center bg-gray-50/50 mx-6 rounded-2xl border border-gray-100 border-dashed">
                   <Star size={24} className="mx-auto mb-2 text-gray-300" />
-                  <p className="text-gray-400 text-sm font-roboto mb-4">Aún no hay reseñas para este negocio.</p>
-                  <button
-                    onClick={() => navigate(`/review/${userId}`)}
-                    className="px-4 py-2 bg-blue-500 text-white rounded-full font-roboto font-medium text-sm hover:bg-blue-600 transition-colors"
-                  >
-                    Dejar la primera reseña
-                  </button>
+                  <p className="text-gray-400 text-sm font-roboto mb-4">{isUsuario ? 'Este usuario no ha escrito reseñas.' : 'Aún no hay reseñas para este negocio.'}</p>
+                  {!isUsuario && (
+                    <button
+                      onClick={() => navigate(`/review/${userId}`)}
+                      className="px-4 py-2 bg-blue-500 text-white rounded-full font-roboto font-medium text-sm hover:bg-blue-600 transition-colors"
+                    >
+                      Dejar la primera reseña
+                    </button>
+                  )}
                 </div>
               )}
             </section>
@@ -434,8 +466,9 @@ export default function UserProfile() {
           <ReviewsModal
             isOpen={showReviewsModal}
             onClose={() => setShowReviewsModal(false)}
-            reviews={reviews}
+            reviews={isUsuario ? reviewsGiven : reviews}
             targetName={targetUser?.businessName || 'Usuario'}
+            isUsuario={isUsuario}
           />
         )}
       </AnimatePresence>

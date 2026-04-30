@@ -6,13 +6,14 @@ import AuthPortal from './pages/AuthPortal'
 import SignIn from './pages/SignIn'
 import SignUp from './pages/SignUp'
 import Home from './pages/Home'
-import DevelopmentScreen from './pages/DevelopmentScreen'
+import Explore from './pages/Explore'
 import Personalization from './pages/Personalization'
 import Profile from './pages/Profile'
 import CompleteProfile from './pages/CompleteProfile'
 import UploadProduct from './pages/UploadProduct'
 import UserProfile from './pages/UserProfile'
 import LeaveReview from './pages/LeaveReview'
+import SearchPage from './pages/Search'
 
 function AppRoutes() {
   const { session, loading } = useAuthContext();
@@ -46,11 +47,12 @@ function AppRoutes() {
       <Route path="/user/:userId" element={<RequireOnboarding><UserProfile /></RequireOnboarding>} />
       <Route path="/upload" element={<RequireOnboarding><UploadProduct /></RequireOnboarding>} />
       <Route path="/review/:userId" element={<RequireOnboarding><LeaveReview /></RequireOnboarding>} />
+      <Route path="/search" element={<RequireOnboarding><SearchPage /></RequireOnboarding>} />
       
       {/* Interstitial routes that require session but not full onboarding */}
       <Route path="/personalization" element={session ? <Personalization /> : <Navigate to="/auth-portal" replace />} />
       <Route path="/complete-profile" element={session ? <CompleteProfile /> : <Navigate to="/auth-portal" replace />} />
-      <Route path="/development" element={session ? <DevelopmentScreen /> : <Navigate to="/auth-portal" replace />} />
+      <Route path="/explore" element={session ? <Explore /> : <Navigate to="/auth-portal" replace />} />
     </Routes>
   );
 }

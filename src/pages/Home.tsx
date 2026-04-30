@@ -3,7 +3,7 @@ import MobileContainer from '@/components/layout/MobileContainer';
 import ProductCard from '@/components/home/ProductCard';
 import BottomNav from '@/components/layout/BottomNav';
 import NotificationsDrawer from '@/components/home/NotificationsDrawer';
-import { Search, Bell } from 'lucide-react';
+import { Bell } from 'lucide-react';
 import logoUrl from '@/assets/logo.png';
 import { useState } from 'react';
 import { motion } from 'motion/react';
@@ -46,29 +46,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Desktop Search Bar */}
-      <div className="hidden lg:flex w-full max-w-[600px] mx-auto pt-8 px-4 mb-4">
-        <div className="w-full bg-[#F5F5F5] h-[45px] rounded-xl flex items-center px-4 gap-3">
-          <Search size={20} className="text-gray-400" />
-          <input 
-            type="text" 
-            placeholder="Buscar en CampusMarket..." 
-            className="bg-transparent border-none outline-none text-[16px] font-roboto text-black w-full"
-          />
-        </div>
-      </div>
 
-      {/* Mobile Search Bar */}
-      <div className="w-full lg:hidden px-4 mb-6">
-        <div className="w-full bg-[#E8E8E8] h-[40px] rounded-xl flex items-center px-4 gap-3">
-          <Search size={18} className="text-grayDark" />
-          <input 
-            type="text" 
-            placeholder="Buscar..." 
-            className="bg-transparent border-none outline-none text-[17px] font-roboto text-grayText w-full"
-          />
-        </div>
-      </div>
 
       {/* Notifications Drawer Overlay - Mobile only (desktop handled by MobileContainer) */}
       <div className="lg:hidden">

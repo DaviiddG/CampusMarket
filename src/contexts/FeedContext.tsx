@@ -22,6 +22,8 @@ export interface Review {
   reviewer_name?: string;
   reviewer_avatar?: string;
   image_url?: string;
+  target_name?: string;
+  target_avatar?: string;
 }
 
 export interface Post {
@@ -32,6 +34,7 @@ export interface Post {
   imageUrl: string;
   price: string;
   description: string;
+  category?: string;
   likes: number;
 }
 
@@ -50,6 +53,7 @@ interface FeedContextType {
   getComments: (postId: string) => Promise<Comment[]>;
   addReview: (targetUserId: string, rating: number, content: string, imageUrl?: string) => Promise<boolean>;
   getReviews: (targetUserId: string) => Promise<Review[]>;
+  getReviewsGiven: (reviewerId: string) => Promise<Review[]>;
   loading: boolean;
 }
 
@@ -81,6 +85,7 @@ export const FeedProvider = ({ children }: { children: ReactNode }) => {
             imageUrl: newPostRaw.image_url,
             price: newPostRaw.price,
             description: newPostRaw.description,
+            category: newPostRaw.category,
             likes: 0
           };
           setPosts(prev => {
@@ -139,6 +144,7 @@ export const FeedProvider = ({ children }: { children: ReactNode }) => {
         imageUrl: p.image_url,
         price: p.price,
         description: p.description,
+        category: p.category,
         likes: 0
       }));
 
@@ -568,9 +574,53 @@ export const FeedProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const getReviewsGiven = async (reviewerId: string): Promise<Review[]> => {
+    try {
+      const { data, error } = await supabase
+        .from('reviews')
+        .select('*')
+        .eq('reviewer_id', reviewerId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      if (!data || data.length === 0) return [];
+
+      // Fetch target profiles to get name + avatar of the businesses reviewed
+      const targetIds = Array.from(new Set(data.map(r => r.target_user_id)));
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('id, business_name, avatar_url')
+        .in('id', targetIds);
+
+      const profileMap: Record<string, { business_name?: string; avatar_url?: string }> = {};
+      (profileData || []).forEach(p => { profileMap[p.id] = p; });
+
+      // Also check posts table as a fallback for target names
+      const missingTargets = targetIds.filter(id => !profileMap[id]?.business_name);
+      if (missingTargets.length > 0) {
+        const { data: postData } = await supabase
+          .from('posts')
+          .select('user_id, business_name, avatar_url')
+          .in('user_id', missingTargets);
+        (postData || []).forEach(p => {
+          if (!profileMap[p.user_id]) profileMap[p.user_id] = { business_name: p.business_name, avatar_url: p.avatar_url };
+        });
+      }
+
+      return data.map(r => ({
+        ...r,
+        target_name: profileMap[r.target_user_id]?.business_name || 'Negocio',
+        target_avatar: profileMap[r.target_user_id]?.avatar_url || null,
+      }));
+    } catch (e) {
+      console.error('Error fetching given reviews:', e);
+      return [];
+    }
+  };
+
   return (
     <FeedContext.Provider value={{ 
-      posts, savedPostIds, likedPostIds, addPost, deletePost, updatePost, toggleLike, toggleSave, sharePost, addComment, deleteComment, getComments, addReview, getReviews, loading 
+      posts, savedPostIds, likedPostIds, addPost, deletePost, updatePost, toggleLike, toggleSave, sharePost, addComment, deleteComment, getComments, addReview, getReviews, getReviewsGiven, loading 
     }}>
       {children}
     </FeedContext.Provider>

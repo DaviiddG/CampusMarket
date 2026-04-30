@@ -52,7 +52,7 @@ export default function RightSidebar() {
   }, [posts, user?.id]);
 
   return (
-    <aside className="hidden xl:flex flex-col w-[320px] h-screen py-10 px-4 sticky top-0 flex-shrink-0">
+    <aside className="hidden xl:flex flex-col w-[320px] py-10 px-4 sticky top-0 self-start max-h-screen overflow-y-auto no-scrollbar flex-shrink-0">
       {/* Current User Header */}
       <div className="flex items-center justify-between mb-6">
         <Link to="/profile" className="flex items-center gap-3 group">

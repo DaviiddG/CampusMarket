@@ -1,17 +1,91 @@
 import { useState, useEffect } from 'react';
-import { Home, PlusSquare, Bell, LogOut, Compass } from 'lucide-react';
+import { Home, PlusSquare, Bell, LogOut, Compass, Search } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import logoUrl from '@/assets/logo.png';
+import logoIconUrl from '@/assets/logo.png';
 import { useNotificationContext } from '@/contexts/NotificationContext';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
+import { motion, AnimatePresence } from 'motion/react';
 
+const DEFAULT_AVATAR =
+  'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI0UyRThGMCIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNDAiIHI9IjIwIiBmaWxsPSIjOTRBM0I4Ii8+PHBhdGggZD0iTTIwIDEwMGEzMCAzMCAwIDAgMSA2MCAwIiBmaWxsPSIjOTRBM0I4Ii8+PC9zdmc+';
+
+/* ── Tooltip ──────────────────────────────────────────────────── */
+function Tooltip({ label, children }: { label: string; children: React.ReactNode }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <div
+      className="relative flex items-center"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      {children}
+      <AnimatePresence>
+        {hovered && (
+          <motion.div
+            initial={{ opacity: 0, x: -8, scale: 0.93 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: -8, scale: 0.93 }}
+            transition={{ duration: 0.14, ease: 'easeOut' }}
+            className="absolute left-[56px] z-[9999] pointer-events-none"
+            style={{ whiteSpace: 'nowrap' }}
+          >
+            <div className="relative bg-gray-900 text-white text-[13px] font-roboto font-medium px-3 py-1.5 rounded-lg shadow-2xl">
+              {label}
+              <span className="absolute right-full top-1/2 -translate-y-1/2 border-[5px] border-transparent border-r-gray-900" />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+/* ── NavItem ──────────────────────────────────────────────────── */
+interface NavItemProps {
+  label: string;
+  icon: React.ReactNode;
+  isActive: boolean;
+  href: string;
+  badge?: number;
+  onClick?: (e: React.MouseEvent) => void;
+}
+
+function NavItem({ label, icon, isActive, href, badge, onClick }: NavItemProps) {
+  return (
+    <Tooltip label={label}>
+      <Link
+        to={href}
+        onClick={onClick}
+        className={cn(
+          'relative flex items-center justify-center w-11 h-11 rounded-xl transition-all duration-200',
+          isActive ? 'bg-gray-100 text-black' : 'text-black/70 hover:bg-gray-100 hover:text-black'
+        )}
+      >
+        <div className="relative">
+          <div style={{ display: 'contents', strokeWidth: isActive ? 2.5 : 2 }}>
+            {icon}
+          </div>
+          {badge !== undefined && badge > 0 && (
+            <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center border-2 border-white leading-none">
+              {badge > 9 ? '9+' : badge}
+            </span>
+          )}
+        </div>
+      </Link>
+    </Tooltip>
+  );
+}
+
+/* ── Sidebar ──────────────────────────────────────────────────── */
 export default function Sidebar() {
   const location = useLocation();
   const { unreadCount, markAllAsRead } = useNotificationContext();
   const { user } = useAuthContext();
   const [profileAvatar, setProfileAvatar] = useState<string | null>(null);
+
+  const isEmprendedor = user?.user_metadata?.role === 'emprendedor';
 
   useEffect(() => {
     if (!user) return;
@@ -25,124 +99,105 @@ export default function Sidebar() {
       });
   }, [user]);
 
+  const userAvatar = profileAvatar || user?.user_metadata?.avatar_url || DEFAULT_AVATAR;
+
   const navItems = [
-    { label: 'Inicio', icon: Home, path: '/home' },
-    { label: 'Explorar', icon: Compass, path: '/development' },
-    { label: 'Crear', icon: PlusSquare, path: '/upload' },
-    { 
-      label: 'Notificaciones', 
-      icon: Bell, 
-      path: '#', 
+    { label: 'Inicio',   icon: <Home size={24} />,       path: '/home'    },
+    { label: 'Buscar',   icon: <Search size={24} />,     path: '/search'  },
+    { label: 'Explorar', icon: <Compass size={24} />,    path: '/explore' },
+    ...(isEmprendedor
+      ? [{ label: 'Crear', icon: <PlusSquare size={24} />, path: '/upload' }]
+      : []),
+    {
+      label: 'Notificaciones',
+      icon: <Bell size={24} />,
+      path: '#',
       badge: unreadCount,
-      onClick: () => {
+      onClick: (e: React.MouseEvent) => {
+        e.preventDefault();
         window.dispatchEvent(new CustomEvent('toggleNotifications'));
         markAllAsRead();
-      }
+      },
     },
   ];
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-  };
+  const handleLogout = async () => supabase.auth.signOut();
 
-  const DEFAULT_AVATAR = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI0UyRThGMCIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNDAiIHI9IjIwIiBmaWxsPSIjOTRBM0I4Ii8+PHBhdGggZD0iTTIwIDEwMGEzMCAzMCAwIDAgMSA2MCAwIiBmaWxsPSIjOTRBM0I4Ii8+PC9zdmc+';
-  const userAvatar = profileAvatar || user?.user_metadata?.avatar_url || DEFAULT_AVATAR;
+  const isActive = (path: string) => location.pathname === path;
 
   return (
-    <aside className="hidden lg:flex flex-col w-[245px] h-screen border-r border-gray-100 bg-white px-3 py-8 sticky top-0 flex-shrink-0 z-50">
-      <div className="flex flex-col h-full">
-        {/* Logo */}
-        <Link to="/home" className="px-3 mb-10 flex items-center justify-start group">
-          <img 
-            src={logoUrl} 
-            alt="CampusMarket" 
-            className="w-[180px] h-auto object-contain transition-transform group-hover:scale-105 group-active:scale-95" 
-          />
+    <aside
+      className="hidden lg:flex flex-col w-[72px] h-screen border-r border-gray-100 bg-white px-3 fixed top-0 left-0 z-50"
+      style={{ overflow: 'visible', paddingTop: 'clamp(12px, 2vh, 32px)', paddingBottom: 'clamp(12px, 2vh, 32px)' }}
+    >
+      {/* ── Logo (top) ─────────────────────────────────────── */}
+      <Tooltip label="CampusMarket">
+        <Link
+          to="/home"
+          className="flex items-center justify-center w-11 h-11 rounded-xl hover:bg-gray-100 transition-colors mx-auto"
+          style={{ marginBottom: 'clamp(8px, 2vh, 24px)' }}
+        >
+          <img src={logoIconUrl} alt="CampusMarket" className="w-8 h-8 object-contain" />
         </Link>
+      </Tooltip>
 
-        {/* Nav Items - Spaced out for vertical balance */}
-        <nav className="flex-1 space-y-5 flex flex-col justify-center">
-        {navItems.map((item) => {
-          const isActive = location.pathname === item.path;
-          const Icon = item.icon;
+      {/* ── Nav Items (vertically centered, compressible) ─── */}
+      <nav
+        className="flex-1 flex flex-col items-center justify-center"
+        style={{ gap: 'clamp(2px, 1.2vh, 8px)', overflow: 'visible' }}
+      >
+        {navItems.map((item) => (
+          <NavItem
+            key={item.label}
+            label={item.label}
+            href={item.path}
+            icon={item.icon}
+            isActive={isActive(item.path)}
+            badge={item.badge}
+            onClick={item.onClick}
+          />
+        ))}
 
-          return (
-            <Link
-              key={item.label}
-              to={item.path}
-              onClick={item.onClick}
-              className={cn(
-                "flex items-center gap-4 px-3 py-3 rounded-xl transition-all group",
-                isActive 
-                  ? "text-black" 
-                  : "text-black/80 hover:bg-gray-50 hover:text-black"
-              )}
-            >
-              <div className="relative">
-                <Icon 
-                  size={26} 
-                  strokeWidth={isActive ? 2.5 : 2}
-                  className={cn("transition-transform group-hover:scale-105")} 
-                />
-                {item.badge !== undefined && item.badge > 0 && (
-                  <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white">
-                    {item.badge > 9 ? '9+' : item.badge}
-                  </span>
-                )}
-              </div>
-              <span className={cn(
-                "text-[16px] font-roboto hidden xl:block",
-                isActive ? "font-bold" : "font-normal"
-              )}>
-                {item.label}
-              </span>
-            </Link>
-          );
-        })}
-
-        {/* Profile Item inside Nav List (near bottom) */}
-        <div className="pt-2">
+        {/* Profile */}
+        <Tooltip label="Perfil">
           <Link
             to="/profile"
             className={cn(
-              "flex items-center gap-4 px-3 py-3 rounded-xl transition-all group",
-              location.pathname === '/profile'
-                ? "text-black"
-                : "text-black/80 hover:bg-gray-50 hover:text-black"
+              'flex items-center justify-center w-11 h-11 rounded-xl transition-all duration-200',
+              isActive('/profile') ? 'bg-gray-100' : 'hover:bg-gray-100'
             )}
           >
-            <div className={cn(
-              "relative w-7 h-7 rounded-full overflow-hidden border transition-all group-hover:scale-105",
-              location.pathname === '/profile' ? "border-black border-2" : "border-gray-200"
-            )}>
-              <img 
-                src={userAvatar} 
-                alt="Profile" 
+            <div
+              className={cn(
+                'w-7 h-7 rounded-full overflow-hidden border-2 transition-all',
+                isActive('/profile') ? 'border-black' : 'border-gray-300'
+              )}
+            >
+              <img
+                src={userAvatar}
+                alt="Profile"
                 className="w-full h-full object-cover"
-                onError={(e) => { (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI0UyRThGMCIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNDAiIHI9IjIwIiBmaWxsPSIjOTRBM0I4Ii8+PHBhdGggZD0iTTIwIDEwMGEzMCAzMCAwIDAgMSA2MCAwIiBmaWxsPSIjOTRBM0I4Ii8+PC9zdmc+'; }}
+                onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_AVATAR; }}
               />
             </div>
-            <span className={cn(
-              "text-[16px] font-roboto hidden xl:block",
-              location.pathname === '/profile' ? "font-bold" : "font-normal"
-            )}>
-              Perfil
-            </span>
           </Link>
-        </div>
+        </Tooltip>
       </nav>
 
-      {/* Bottom Section */}
-      <div className="mt-auto space-y-2">
-        <button
-          onClick={handleLogout}
-          className="flex items-center gap-4 px-3 py-3 w-full rounded-xl text-red-500 hover:bg-red-50 transition-colors group"
-        >
-          <LogOut size={26} className="group-hover:translate-x-1 transition-transform" />
-          <span className="text-[16px] font-medium hidden xl:block">Cerrar sesión</span>
-        </button>
+      {/* ── Logout (bottom) ────────────────────────────────── */}
+      <div
+        className="flex justify-center"
+        style={{ overflow: 'visible', paddingTop: 'clamp(8px, 2vh, 20px)' }}
+      >
+        <Tooltip label="Cerrar sesión">
+          <button
+            onClick={handleLogout}
+            className="flex items-center justify-center w-11 h-11 rounded-xl text-red-500 hover:bg-red-50 transition-colors"
+          >
+            <LogOut size={22} />
+          </button>
+        </Tooltip>
       </div>
-    </div>
-  </aside>
-);
+    </aside>
+  );
 }
