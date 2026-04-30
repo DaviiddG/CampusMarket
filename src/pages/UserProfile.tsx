@@ -63,6 +63,7 @@ export default function UserProfile() {
             instagram: profileData.instagram || null,
             facebook: profileData.facebook || null,
             role: profileData.role || 'usuario',
+            lastSeen: profileData.updated_at || null,
           });
         } else if (post) {
           // No profiles row yet — show basic info from post
@@ -189,18 +190,20 @@ export default function UserProfile() {
           {/* Profile Info - Responsive Header */}
           <div className="flex flex-col lg:flex-row items-center lg:items-start gap-8 lg:gap-14 px-6 mt-6 lg:mt-12">
             {/* Avatar Container with Online Indicator */}
-            <div className="relative flex-shrink-0">
-              <div className="w-24 h-24 lg:w-40 lg:h-40 rounded-full overflow-hidden border-[3px] border-primary/10 shadow-lg">
-                <img 
-                  src={targetUser?.avatarUrl || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI0UyRThGMCIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNDAiIHI9IjIwIiBmaWxsPSIjOTRBM0I4Ii8+PHBhdGggZD0iTTIwIDEwMGEzMCAzMCAwIDAgMSA2MCAwIiBmaWxsPSIjOTRBM0I4Ii8+PC9zdmc+'} 
-                  alt="Profile Avatar" 
-                  className="w-full h-full object-cover"
-                  onError={(e) => { (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI0UyRThGMCIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNDAiIHI9IjIwIiBmaWxsPSIjOTRBM0I4Ii8+PHBhdGggZD0iTTIwIDEwMGEzMCAzMCAwIDAgMSA2MCAwIiBmaWxsPSIjOTRBM0I4Ii8+PC9zdmc+'; }}
-                />
+              <div className="relative flex-shrink-0">
+                <div className="w-24 h-24 lg:w-40 lg:h-40 rounded-full overflow-hidden border-[3px] border-primary/10 shadow-lg">
+                  <img 
+                    src={targetUser?.avatarUrl || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI0UyRThGMCIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNDAiIHI9IjIwIiBmaWxsPSIjOTRBM0I4Ii8+PHBhdGggZD0iTTIwIDEwMGEzMCAzMCAwIDAgMSA2MCAwIiBmaWxsPSIjOTRBM0I4Ii8+PC9zdmc+'} 
+                    alt="Profile Avatar" 
+                    className="w-full h-full object-cover"
+                    onError={(e) => { (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI0UyRThGMCIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNDAiIHI9IjIwIiBmaWxsPSIjOTRBM0I4Ii8+PHBhdGggZD0iTTIwIDEwMGEzMCAzMCAwIDAgMSA2MCAwIiBmaWxsPSIjOTRBM0I4Ii8+PC9zdmc+'; }}
+                  />
+                </div>
+                {/* Indicador En Línea - Solo si se conectó hace menos de 5 minutos */}
+                {targetUser?.lastSeen && (new Date().getTime() - new Date(targetUser.lastSeen).getTime()) < 5 * 60 * 1000 && (
+                  <div className="absolute bottom-1 right-2 lg:bottom-3 lg:right-4 w-4 h-4 lg:w-5 lg:h-5 bg-green-500 border-[3px] border-white rounded-full" title="En línea" />
+                )}
               </div>
-              {/* Indicador En Línea */}
-              <div className="absolute bottom-1 right-2 lg:bottom-3 lg:right-4 w-4 h-4 lg:w-5 lg:h-5 bg-green-500 border-[3px] border-white rounded-full" title="En línea" />
-            </div>
             <div className="flex-1 flex flex-col items-center lg:items-start">
               <div className="flex flex-col lg:flex-row items-center gap-4 lg:gap-6 mb-6">
                 <h2 className="text-xl lg:text-2xl font-roboto font-bold text-black">{targetUser?.businessName}</h2>

@@ -595,23 +595,45 @@ export const FeedProvider = ({ children }: { children: ReactNode }) => {
       const profileMap: Record<string, { business_name?: string; avatar_url?: string }> = {};
       (profileData || []).forEach(p => { profileMap[p.id] = p; });
 
-      // Also check posts table as a fallback for target names
-      const missingTargets = targetIds.filter(id => !profileMap[id]?.business_name);
+      // Fallback 1: posts table for missing or empty names
+      const missingTargets = targetIds.filter(id => !profileMap[id]?.business_name || (profileMap[id]?.business_name?.trim() ?? '') === '');
       if (missingTargets.length > 0) {
         const { data: postData } = await supabase
           .from('posts')
           .select('user_id, business_name, avatar_url')
           .in('user_id', missingTargets);
         (postData || []).forEach(p => {
-          if (!profileMap[p.user_id]) profileMap[p.user_id] = { business_name: p.business_name, avatar_url: p.avatar_url };
+          if (!profileMap[p.user_id]?.business_name) {
+            profileMap[p.user_id] = { ...profileMap[p.user_id], business_name: p.business_name, avatar_url: p.avatar_url };
+          }
         });
       }
 
-      return data.map(r => ({
-        ...r,
-        target_name: profileMap[r.target_user_id]?.business_name || 'Negocio',
-        target_avatar: profileMap[r.target_user_id]?.avatar_url || null,
-      }));
+      // Fallback 2: notifications table (check if they received a review/comment before)
+      const stillMissing = targetIds.filter(id => !profileMap[id]?.business_name || (profileMap[id]?.business_name?.trim() ?? '') === '' || profileMap[id]?.business_name === 'Negocio');
+      if (stillMissing.length > 0) {
+        // Here we look at notifications where these users were actors, or common posts
+        const { data: postData2 } = await supabase
+          .from('posts')
+          .select('user_id, business_name')
+          .in('user_id', stillMissing);
+        
+        (postData2 || []).forEach(p => {
+          if (!profileMap[p.user_id]?.business_name || profileMap[p.user_id]?.business_name === 'Negocio') {
+            profileMap[p.user_id] = { ...profileMap[p.user_id], business_name: p.business_name };
+          }
+        });
+      }
+
+      return data.map(r => {
+        const name = profileMap[r.target_user_id]?.business_name?.trim();
+        const finalName = name && name !== '' && name !== 'Negocio' ? name : 'Negocio';
+        return {
+          ...r,
+          target_name: finalName,
+          target_avatar: profileMap[r.target_user_id]?.avatar_url || null,
+        };
+      });
     } catch (e) {
       console.error('Error fetching given reviews:', e);
       return [];
