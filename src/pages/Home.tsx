@@ -3,7 +3,7 @@ import MobileContainer from '@/components/layout/MobileContainer';
 import ProductCard from '@/components/home/ProductCard';
 import BottomNav from '@/components/layout/BottomNav';
 import NotificationsDrawer from '@/components/home/NotificationsDrawer';
-import { Bell } from 'lucide-react';
+import { Bell, Search } from 'lucide-react';
 import logoUrl from '@/assets/logo.png';
 import { useState } from 'react';
 import { motion } from 'motion/react';

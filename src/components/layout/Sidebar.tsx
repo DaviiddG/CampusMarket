@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Home, PlusSquare, Bell, LogOut, Compass, Search } from 'lucide-react';
+import { Home, PlusSquare, Bell, LogOut, Compass, Search, Menu } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import logoIconUrl from '@/assets/logo.png';
@@ -184,11 +184,21 @@ export default function Sidebar() {
         </Tooltip>
       </nav>
 
-      {/* ── Logout (bottom) ────────────────────────────────── */}
+      {/* ── More & Logout (bottom) ────────────────────────── */}
       <div
-        className="flex justify-center"
-        style={{ overflow: 'visible', paddingTop: 'clamp(8px, 2vh, 20px)' }}
+        className="flex flex-col items-center gap-2 pt-4 border-t border-gray-100 w-full"
+        style={{ overflow: 'visible' }}
       >
+        {/* More Button */}
+        <Tooltip label="Más">
+          <button
+            className="flex items-center justify-center w-11 h-11 rounded-xl text-black/70 hover:bg-gray-100 hover:text-black transition-colors"
+          >
+            <Menu size={24} strokeWidth={2} />
+          </button>
+        </Tooltip>
+
+        {/* Logout */}
         <Tooltip label="Cerrar sesión">
           <button
             onClick={handleLogout}
