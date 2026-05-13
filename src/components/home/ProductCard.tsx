@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Heart, MessageCircle, Send, Bookmark, MoreVertical, Trash2, Edit2 } from 'lucide-react';
+import { Heart, MessageCircle, Send, Bookmark, MoreVertical, Trash2, Edit2, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useFeedContext, type Comment } from '@/contexts/FeedContext';
 import { useAuthContext } from '@/contexts/AuthContext';
-import { Link } from 'react-router-dom';
+import { useStartChat } from '@/hooks/useChat';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { supabase } from '@/lib/supabase';
 
@@ -31,6 +32,7 @@ export default function ProductCard({
   onDelete
 }: ProductCardProps) {
   const { user } = useAuthContext();
+  const navigate = useNavigate();
   const { likedPostIds, savedPostIds, toggleLike, toggleSave, deletePost, updatePost, addComment, deleteComment, getComments, sharePost } = useFeedContext();
   const isLiked = likedPostIds.includes(id);
   const isSaved = savedPostIds.includes(id);
@@ -59,6 +61,9 @@ export default function ProductCard({
   // Follow state
   const [isFollowing, setIsFollowing] = useState(false);
   const [loadingFollow, setLoadingFollow] = useState(false);
+  
+  // Chat state
+  const { getOrCreateChat, starting } = useStartChat();
 
   useEffect(() => {
     if (!user || isOwner) return;
@@ -111,6 +116,16 @@ export default function ProductCard({
       }
     }
     setLoadingFollow(false);
+  };
+
+  const handleStartChat = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (starting) return;
+    const chatId = await getOrCreateChat(postOwnerId);
+    if (chatId) {
+      navigate(`/chat/${chatId}`);
+    }
   };
 
   const handleLike = () => toggleLike(id);
@@ -234,6 +249,14 @@ export default function ProductCard({
                 )}
               >
                 {isFollowing ? 'Siguiendo' : 'Seguir'}
+              </button>
+              <button 
+                onClick={handleStartChat}
+                disabled={starting}
+                className="font-roboto font-bold text-[13px] text-black hover:text-gray-700 transition-colors flex-shrink-0 disabled:opacity-50 flex items-center gap-1"
+              >
+                <MessageSquare size={13} />
+                Mensaje
               </button>
             </>
           )}
@@ -377,6 +400,18 @@ export default function ProductCard({
           <span className="font-bold ml-1 text-primary">{price}</span>
         </div>
       </div>
+
+      {/* Buy Button - Centered */}
+      {!isOwner && (
+        <div className="flex justify-center px-4 pb-3 pt-1">
+          <button
+            onClick={() => navigate(`/checkout/${id}`)}
+            className="px-10 py-2.5 border-2 border-black text-black font-roboto font-medium text-[14px] hover:bg-black hover:text-white transition-all duration-200"
+          >
+            Comprar
+          </button>
+        </div>
+      )}
 
       {/* View comments link */}
       {!showComments && (

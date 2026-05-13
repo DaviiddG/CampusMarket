@@ -13,7 +13,7 @@ export default function CompleteProfile() {
   const navigate = useNavigate();
   const { user } = useAuthContext();
   
-  const [phone, setPhone] = useState(user?.user_metadata?.phone_number || '');
+  const [phone, setPhone] = useState((user?.user_metadata?.phone_number || '').replace(/^\+?57/, ''));
   const [bio, setBio] = useState(user?.user_metadata?.bio || '');
   const [location, setLocation] = useState('');
   const [instagram, setInstagram] = useState('');
@@ -27,6 +27,7 @@ export default function CompleteProfile() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const initialName = user?.user_metadata?.full_name || '';
+  const isUsuario = user?.user_metadata?.role === 'usuario';
 
   // Load existing profile data from 'profiles' table
   useEffect(() => {
@@ -40,7 +41,11 @@ export default function CompleteProfile() {
         if (data) {
           if (data.bio) setBio(data.bio);
           if (data.location) setLocation(data.location);
-          if (data.phone) setPhone(data.phone);
+          if (data.phone) {
+            // Strip leading '57' country code if present, since the form adds it visually
+            const raw = data.phone.replace(/^\+?57/, '');
+            setPhone(raw);
+          }
           if (data.instagram) setInstagram(data.instagram);
           if (data.facebook) setFacebook(data.facebook);
         }
@@ -216,7 +221,9 @@ export default function CompleteProfile() {
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-1">
-            <label className="text-[11px] font-bold text-darkText/60 ml-1 uppercase">Nombre del Emprendimiento</label>
+            <label className="text-[11px] font-bold text-darkText/60 ml-1 uppercase">
+              {isUsuario ? 'Nombre de Usuario' : 'Nombre del Emprendimiento'}
+            </label>
             <input
               type="text"
               value={initialName}

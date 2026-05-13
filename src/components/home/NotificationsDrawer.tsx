@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Heart, UserPlus, MessageCircle, Send, BellOff } from 'lucide-react';
+import { X, Heart, UserPlus, MessageCircle, Send, BellOff, ShoppingBag, Package } from 'lucide-react';
 import { useNotificationContext, type Notification } from '@/contexts/NotificationContext';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -29,6 +29,8 @@ export default function NotificationsDrawer({ isOpen, onClose }: NotificationsDr
       case 'follow': return <UserPlus size={16} className="text-primary" />;
       case 'comment': return <MessageCircle size={16} className="text-green-500" />;
       case 'share': return <Send size={16} className="text-blue-500" />;
+      case 'order': return <ShoppingBag size={16} className="text-green-600" />;
+      case 'order_confirmed': return <Package size={16} className="text-blue-500" />;
       default: return null;
     }
   };
@@ -39,6 +41,8 @@ export default function NotificationsDrawer({ isOpen, onClose }: NotificationsDr
       case 'follow': return 'comenzó a seguirte.';
       case 'comment': return 'comentó tu publicación.';
       case 'share': return 'compartió tu publicación.';
+      case 'order': return '¡hizo un pedido de tu producto! 🛒';
+      case 'order_confirmed': return 'ha confirmado tu pedido. ¡Prepárate para recibirlo! 📦';
     }
   };
 

@@ -21,7 +21,9 @@ export default function Home() {
       <div className="w-full flex lg:hidden flex-col items-center pt-4 px-4">
         {/* Header Bar */}
         <div className="w-full h-[120px] flex items-center justify-between relative mb-4">
-          <div className="w-10" />
+          <div className="w-10 flex justify-start">
+            {/* Empty space to balance the header since Inbox moved to Sidebar/BottomNav */}
+          </div>
           <div className="w-[120px] h-full">
             <img src={logoUrl} alt="CampusMarket" className="w-full h-full object-contain" />
           </div>

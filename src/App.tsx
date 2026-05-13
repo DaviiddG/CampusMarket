@@ -14,6 +14,8 @@ import UploadProduct from './pages/UploadProduct'
 import UserProfile from './pages/UserProfile'
 import LeaveReview from './pages/LeaveReview'
 import SearchPage from './pages/Search'
+import Checkout from './pages/Checkout'
+import Chats from './pages/Chats'
 
 function AppRoutes() {
   const { session, loading } = useAuthContext();
@@ -48,6 +50,9 @@ function AppRoutes() {
       <Route path="/upload" element={<RequireOnboarding><UploadProduct /></RequireOnboarding>} />
       <Route path="/review/:userId" element={<RequireOnboarding><LeaveReview /></RequireOnboarding>} />
       <Route path="/search" element={<RequireOnboarding><SearchPage /></RequireOnboarding>} />
+      <Route path="/checkout/:postId" element={<RequireOnboarding><Checkout /></RequireOnboarding>} />
+      <Route path="/chats" element={<RequireOnboarding><Chats /></RequireOnboarding>} />
+      <Route path="/chat/:chatId" element={<RequireOnboarding><Chats /></RequireOnboarding>} />
       
       {/* Interstitial routes that require session but not full onboarding */}
       <Route path="/personalization" element={session ? <Personalization /> : <Navigate to="/auth-portal" replace />} />

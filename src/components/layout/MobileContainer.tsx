@@ -10,6 +10,7 @@ interface MobileContainerProps {
     justifyCenter?: boolean;
     showSidebars?: boolean;
     hideRightSidebar?: boolean;
+    fullWidthLayout?: boolean;
 }
 
 export default function MobileContainer({
@@ -18,6 +19,7 @@ export default function MobileContainer({
     justifyCenter = true,
     showSidebars = true,
     hideRightSidebar = false,
+    fullWidthLayout = false,
 }: MobileContainerProps) {
     const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
 
@@ -59,13 +61,18 @@ export default function MobileContainer({
                     className
                 )}
             >
-                <div className="flex w-full max-w-full xl:max-w-[1200px] justify-center xl:gap-8 2xl:gap-16 px-0 lg:px-4 items-start">
+                <div className={cn(
+                    "flex w-full justify-center xl:gap-8 2xl:gap-16 px-0 lg:px-4 items-start",
+                    fullWidthLayout ? "max-w-none px-0 lg:px-0" : "max-w-full xl:max-w-[1200px]"
+                )}>
                     {/* Page Content */}
                     <main className={cn(
                         "flex-1 w-full flex flex-col items-center",
-                        hideRightSidebar
-                            ? 'max-w-[700px] lg:max-w-[750px] xl:max-w-[800px]'
-                            : 'max-w-[600px] lg:max-w-none',
+                        fullWidthLayout 
+                            ? 'max-w-none' 
+                            : hideRightSidebar
+                                ? 'max-w-[700px] lg:max-w-[750px] xl:max-w-[800px]'
+                                : 'max-w-[600px] lg:max-w-none',
                         justifyCenter ? 'justify-center min-h-screen' : 'justify-start'
                     )}>
                         {children}

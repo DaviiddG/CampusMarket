@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import MobileContainer from '@/components/layout/MobileContainer';
 import BottomNav from '@/components/layout/BottomNav';
-import { ChevronLeft, LogOut, Grid3X3, Bookmark, Settings, Star, Instagram, Facebook, MessageCircle } from 'lucide-react';
+import { ChevronLeft, LogOut, Grid3X3, Bookmark, Settings, Star, Instagram, Facebook, MessageCircle, ShoppingBag, Package, Clock, CheckCircle2, XCircle } from 'lucide-react';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useFeedContext, type Post, type Review } from '@/contexts/FeedContext';
@@ -13,11 +13,12 @@ import ProductCard from '@/components/home/ProductCard';
 
 export default function Profile() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuthContext();
   const { signOut } = useAuth();
   const { posts, savedPostIds, getReviews, getReviewsGiven } = useFeedContext();
   
-  const [activeTab, setActiveTab] = useState<'posts' | 'saved' | 'reviews'>('posts');
+  const [activeTab, setActiveTab] = useState<'posts' | 'saved' | 'reviews' | 'purchases'>('posts');
   const [reviews, setReviews] = useState<Review[]>([]);
   const [reviewsGiven, setReviewsGiven] = useState<Review[]>([]);
   const [followersCount, setFollowersCount] = useState(0);
@@ -34,6 +35,11 @@ export default function Profile() {
   const [isRemovingAvatar, setIsRemovingAvatar] = useState(false);
   const [showPhotoMenu, setShowPhotoMenu] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [showOrdersDrawer, setShowOrdersDrawer] = useState(false);
+  const [orders, setOrders] = useState<any[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
+  const [salesCount, setSalesCount] = useState(0);
+  const [ordersTab, setOrdersTab] = useState<'pending' | 'confirmed' | 'cancelled'>('pending');
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const displayName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Usuario CampusMarket';
@@ -42,10 +48,14 @@ export default function Profile() {
   const avatarUrl = profileAvatar || user?.user_metadata?.avatar_url || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI0UyRThGMCIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNDAiIHI9IjIwIiBmaWxsPSIjOTRBM0I4Ii8+PHBhdGggZD0iTTIwIDEwMGEzMCAzMCAwIDAgMSA2MCAwIiBmaWxsPSIjOTRBM0I4Ii8+PC9zdmc+';
 
   useEffect(() => {
-    if (isUsuario) {
+    // For users, only reset to 'saved' if the active tab is one that doesn't exist for them (posts/reviews)
+    if (isUsuario && (activeTab === 'posts' || activeTab === 'reviews')) {
       setActiveTab('saved');
     }
-  }, [isUsuario]);
+    if (activeTab === 'purchases' && isUsuario) {
+      fetchOrders();
+    }
+  }, [user, isUsuario, activeTab]);
 
   useEffect(() => {
     if (!user) return;
@@ -97,6 +107,7 @@ export default function Profile() {
     fetchFollows();
     fetchProfileData();
     fetchReviews();
+    fetchSalesCount();
 
     // Realtime subscription for follows
     const channel = supabase
@@ -111,8 +122,22 @@ export default function Profile() {
       )
       .subscribe();
 
+    // Realtime subscription for orders
+    const ordersChannel = supabase
+      .channel(`orders:${user.id}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'orders' },
+        () => {
+          fetchSalesCount();
+          if (showOrdersDrawer) fetchOrders();
+        }
+      )
+      .subscribe();
+
     return () => {
       supabase.removeChannel(channel);
+      supabase.removeChannel(ordersChannel);
     };
   }, [user]);
 
@@ -138,6 +163,81 @@ export default function Profile() {
       }
     } else {
       alert('Tu dispositivo no soporta compartir nativamente.');
+    }
+  };
+
+  const fetchSalesCount = async () => {
+    if (!user) return;
+    const { count } = await supabase
+      .from('orders')
+      .select('*', { count: 'exact', head: true })
+      .eq('seller_id', user.id);
+    if (count !== null) setSalesCount(count);
+  };
+
+  const fetchOrders = async () => {
+    if (!user) return;
+    setOrdersLoading(true);
+    try {
+      // Emprendedores see orders they received; usuarios see orders they placed
+      const column = isUsuario ? 'buyer_id' : 'seller_id';
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*')
+        .eq(column, user.id)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      setOrders(data || []);
+    } catch (e) {
+      console.error('Error fetching orders:', e);
+    } finally {
+      setOrdersLoading(false);
+    }
+  };
+
+  const handleOpenOrders = () => {
+    setShowOrdersDrawer(true);
+    fetchOrders();
+  };
+
+  // Automatically open orders drawer if query param is present
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('openOrders') === 'true') {
+      handleOpenOrders();
+    }
+  }, [location.search]);
+
+  const handleUpdateOrderStatus = async (orderId: string, newStatus: string) => {
+    try {
+      const orderToUpdate = orders.find(o => o.id === orderId);
+
+      const { error } = await supabase
+        .from('orders')
+        .update({ status: newStatus, updated_at: new Date().toISOString() })
+        .eq('id', orderId);
+      if (error) throw error;
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
+      fetchSalesCount();
+
+      // Notify the buyer if the order was confirmed
+      if (newStatus === 'confirmed' && orderToUpdate && orderToUpdate.status === 'pending') {
+        const { error: notifError } = await supabase
+          .from('notifications')
+          .insert({
+            user_id: orderToUpdate.buyer_id,
+            actor_id: user?.id,
+            actor_name: displayName,
+            actor_avatar: avatarUrl,
+            type: 'order_confirmed',
+            post_id: orderToUpdate.product_id,
+            post_image: orderToUpdate.product_image
+          });
+        
+        if (notifError) console.error('Error sending confirmation notification:', notifError);
+      }
+    } catch (e) {
+      console.error('Error updating order:', e);
     }
   };
 
@@ -223,6 +323,11 @@ export default function Profile() {
 
   // Determine which list to show based on the active tab
   const displayPosts = activeTab === 'posts' ? myPosts : mySavedPosts;
+
+  const currentTabs = isUsuario 
+    ? (['saved', 'purchases'] as const)
+    : (['posts', 'saved', 'reviews'] as const);
+  const activeIndex = currentTabs.indexOf(activeTab as any);
 
   return (
     <MobileContainer className="bg-white" justifyCenter={false} hideRightSidebar>
@@ -354,6 +459,12 @@ export default function Profile() {
                   <span className="font-roboto font-bold text-[16px] text-black">{followingCount}</span>
                   <span className="font-roboto font-light text-[12px] md:text-[14px] text-grayText md:text-black">Seguidos</span>
                 </div>
+                {!isUsuario && (
+                  <div className="flex flex-col md:flex-row md:gap-1 items-center cursor-pointer hover:opacity-70 transition-opacity" onClick={handleOpenOrders}>
+                    <span className="font-roboto font-bold text-[16px] text-primary">{salesCount}</span>
+                    <span className="font-roboto font-light text-[12px] md:text-[14px] text-grayText md:text-black">Ventas</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -426,6 +537,17 @@ export default function Profile() {
             className="flex-1 h-[32px] bg-[#E8E8E8] rounded-md font-roboto font-bold text-[13px] text-black flex items-center justify-center hover:bg-gray-300 transition-colors">
             Compartir Perfil
           </button>
+          <button 
+            onClick={handleOpenOrders}
+            className="flex-1 h-[32px] bg-[#E8E8E8] rounded-md font-roboto font-bold text-[13px] text-black flex items-center justify-center gap-1.5 hover:bg-gray-300 transition-colors relative">
+            <ShoppingBag size={14} />
+            {isUsuario ? 'Mis Compras' : 'Pedidos'}
+            {!isUsuario && orders.filter(o => o.status === 'pending').length > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white">
+                {orders.filter(o => o.status === 'pending').length}
+              </span>
+            )}
+          </button>
         </div>
 
         {/* Tabs */}
@@ -462,9 +584,25 @@ export default function Profile() {
         )}
         
         {isUsuario && (
-          <div className="w-full border-t border-gray-200 py-3 flex justify-center items-center">
-            <Bookmark size={24} className="text-black" strokeWidth={2} />
-            <span className="ml-2 font-roboto font-bold text-[14px]">Guardados</span>
+          <div className="flex items-center justify-around w-full border-t border-gray-200">
+            <button 
+              className="flex-1 py-3 flex justify-center items-center relative"
+              onClick={() => setActiveTab('saved')}
+            >
+              <Bookmark size={24} className={cn("transition-colors", activeTab === 'saved' ? "text-black" : "text-gray-400")} strokeWidth={activeTab === 'saved' ? 2 : 1.5} />
+              {activeTab === 'saved' && (
+                <motion.div layoutId="tab-indicator-user" className="absolute bottom-0 w-full h-[2px] bg-black" />
+              )}
+            </button>
+            <button 
+              className="flex-1 py-3 flex justify-center items-center relative"
+              onClick={() => setActiveTab('purchases')}
+            >
+              <ShoppingBag size={24} className={cn("transition-colors", activeTab === 'purchases' ? "text-black" : "text-gray-400")} strokeWidth={activeTab === 'purchases' ? 2 : 1.5} />
+              {activeTab === 'purchases' && (
+                <motion.div layoutId="tab-indicator-user" className="absolute bottom-0 w-full h-[2px] bg-black" />
+              )}
+            </button>
           </div>
         )}
 
@@ -472,28 +610,87 @@ export default function Profile() {
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}
-            initial={{ opacity: 0, x: activeTab === 'posts' ? -20 : 20 }}
+            initial={{ opacity: 0, x: activeIndex === 0 ? -20 : 20 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: activeTab === 'posts' ? 20 : -20 }}
+            exit={{ opacity: 0, x: activeIndex === 0 ? 20 : -20 }}
             transition={{ duration: 0.15, ease: 'easeOut' }}
-            {...(!isUsuario ? {
-              drag: "x" as const,
-              dragConstraints: { left: 0, right: 0 },
-              dragElastic: 0.2,
-              onDragEnd: (_: unknown, { offset }: { offset: { x: number } }) => {
-                const swipe = offset.x;
-                const TABS: Array<'posts' | 'saved' | 'reviews'> = ['posts', 'saved', 'reviews'];
-                const currentIndex = TABS.indexOf(activeTab as 'posts' | 'saved' | 'reviews');
-                if (swipe < -40 && currentIndex < TABS.length - 1) {
-                  setActiveTab(TABS[currentIndex + 1]);
-                } else if (swipe > 40 && currentIndex > 0) {
-                  setActiveTab(TABS[currentIndex - 1]);
-                }
+            drag="x"
+            dragConstraints={{ left: 0, right: 0 }}
+            dragElastic={0.2}
+            onDragEnd={(_: unknown, { offset }: { offset: { x: number } }) => {
+              const swipe = offset.x;
+              if (swipe < -40 && activeIndex < currentTabs.length - 1) {
+                setActiveTab(currentTabs[activeIndex + 1]);
+              } else if (swipe > 40 && activeIndex > 0) {
+                setActiveTab(currentTabs[activeIndex - 1]);
               }
-            } : {})}
+            }}
             className="w-full min-h-[300px]"
           >
-            {activeTab === 'reviews' ? (
+            {activeTab === 'purchases' ? (
+              <div className="flex flex-col w-full px-4 py-4 pb-8 space-y-4 bg-gray-50/50 min-h-[300px]">
+                {ordersLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="w-8 h-8 border-4 border-gray-200 border-t-primary rounded-full animate-spin" />
+                  </div>
+                ) : orders.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <ShoppingBag size={48} className="text-gray-200 mb-4" />
+                    <p className="font-roboto font-medium text-black">No tienes compras aún</p>
+                    <p className="font-roboto text-sm text-gray-500 mt-1">Explora productos en el inicio.</p>
+                  </div>
+                ) : (
+                  orders.map((order) => (
+                    <motion.div
+                      key={order.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="bg-white rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.04)] border border-gray-100 overflow-hidden"
+                    >
+                      <div className="flex items-start gap-3 p-4">
+                        <div className="w-16 h-16 rounded-xl overflow-hidden bg-gray-50 flex-shrink-0 border border-gray-100">
+                          <img 
+                            src={order.product_image} 
+                            alt="Producto" 
+                            className="w-full h-full object-cover"
+                            onError={(e) => { (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI0UyRThGMCIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNDAiIHI9IjIwIiBmaWxsPSIjOTRBM0I4Ii8+PHBhdGggZD0iTTIwIDEwMGEzMCAzMCAwIDAgMSA2MCAwIiBmaWxsPSIjOTRBM0I4Ii8+PC9zdmc+'; }}
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-roboto font-bold text-[13px] text-black truncate">{order.product_name}</p>
+                          <p className="font-roboto font-bold text-[15px] text-primary mt-0.5">{order.total_price}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="font-roboto text-[11px] text-gray-400">
+                              {order.quantity > 1 ? `${order.quantity} unidades · ` : ''}
+                              {new Date(order.created_at).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="px-4 pb-3 pt-1 border-t border-gray-50">
+                        <div className={cn(
+                          "inline-flex items-center gap-1.5 px-3 py-1.5 mt-2 rounded-full text-[11px] font-roboto font-bold",
+                          order.status === 'pending' ? 'bg-amber-50 text-amber-600' :
+                          order.status === 'confirmed' ? 'bg-green-50 text-green-600' :
+                          order.status === 'delivered' ? 'bg-blue-50 text-blue-600' :
+                          'bg-red-50 text-red-500'
+                        )}>
+                          {order.status === 'pending' && <Clock size={12} />}
+                          {order.status === 'confirmed' && <CheckCircle2 size={12} />}
+                          {order.status === 'delivered' && <Package size={12} />}
+                          {order.status === 'cancelled' && <XCircle size={12} />}
+                          {order.status === 'pending' ? 'Pendiente' :
+                           order.status === 'confirmed' ? 'Confirmado' :
+                           order.status === 'delivered' ? 'Entregado' :
+                           'Cancelado'}
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))
+                )}
+              </div>
+            ) : activeTab === 'reviews' ? (
               <div className="flex flex-col w-full pb-8">
                 {reviews.length === 0 ? (
                   <div className="flex flex-col items-center justify-center pt-16 text-gray-500">
@@ -638,6 +835,232 @@ export default function Profile() {
         )}
       </AnimatePresence>
 
+      {/* Orders Drawer */}
+      <AnimatePresence>
+        {showOrdersDrawer && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowOrdersDrawer(false)}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[300]"
+            />
+            
+            {/* Drawer */}
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="fixed top-0 right-0 w-full max-w-[440px] h-full bg-white z-[310] shadow-2xl flex flex-col"
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between px-6 h-16 border-b border-gray-100 flex-shrink-0">
+                <div className="flex items-center gap-2">
+                  <ShoppingBag size={20} className="text-primary" />
+                  <h2 className="text-xl font-roboto font-bold text-black">{isUsuario ? 'Mis Compras' : 'Pedidos'}</h2>
+                </div>
+                <button 
+                  onClick={() => setShowOrdersDrawer(false)}
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                >
+                  <XCircle size={22} className="text-gray-400" />
+                </button>
+              </div>
+
+              {/* Tabs */}
+              <div className="flex border-b border-gray-100">
+                {([
+                  { key: 'pending' as const, label: 'Pendientes', icon: Clock, color: 'text-amber-500' },
+                  { key: 'confirmed' as const, label: 'Confirmados', icon: CheckCircle2, color: 'text-green-500' },
+                  { key: 'cancelled' as const, label: 'Cancelados', icon: XCircle, color: 'text-red-400' },
+                ]).map(tab => {
+                  const count = orders.filter(o => o.status === tab.key).length;
+                  return (
+                    <button
+                      key={tab.key}
+                      onClick={() => setOrdersTab(tab.key)}
+                      className={cn(
+                        "flex-1 py-3 flex flex-col items-center gap-1 relative transition-colors",
+                        ordersTab === tab.key ? "text-black" : "text-gray-400"
+                      )}
+                    >
+                      <div className="flex items-center gap-1">
+                        <tab.icon size={14} className={ordersTab === tab.key ? tab.color : 'text-gray-300'} />
+                        <span className="font-roboto font-bold text-[12px]">{tab.label}</span>
+                      </div>
+                      {count > 0 && (
+                        <span className={cn(
+                          "text-[10px] font-bold",
+                          ordersTab === tab.key ? "text-primary" : "text-gray-300"
+                        )}>{count}</span>
+                      )}
+                      {ordersTab === tab.key && (
+                        <motion.div layoutId="orders-tab-indicator" className="absolute bottom-0 left-0 right-0 h-[2px] bg-primary" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Orders List */}
+              <div className="flex-1 overflow-y-auto no-scrollbar p-4">
+                {ordersLoading ? (
+                  <div className="flex flex-col items-center justify-center p-12 space-y-4">
+                    <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+                    <p className="text-gray-400 font-roboto">Cargando pedidos...</p>
+                  </div>
+                ) : orders.filter(o => o.status === ordersTab).length === 0 ? (
+                  <div className="flex flex-col items-center justify-center p-12 text-center">
+                    <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+                      <Package size={32} className="text-gray-300" />
+                    </div>
+                    <p className="text-black font-roboto font-bold mb-1">
+                      {ordersTab === 'pending' ? 'Sin pedidos pendientes' :
+                       ordersTab === 'confirmed' ? 'Sin pedidos confirmados' :
+                       'Sin pedidos cancelados'}
+                    </p>
+                    <p className="text-gray-400 text-sm font-roboto">
+                      {ordersTab === 'pending' ? 'Los nuevos pedidos aparecerán aquí.' :
+                       ordersTab === 'confirmed' ? 'Los pedidos que confirmes se verán aquí.' :
+                       'Los pedidos cancelados aparecerán aquí.'}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {orders
+                      .filter(o => o.status === ordersTab)
+                      .map((order, i) => (
+                        <motion.div
+                          key={order.id}
+                          initial={{ opacity: 0, y: 15, filter: 'blur(4px)' }}
+                          animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                          transition={{ delay: Math.min(i * 0.08, 0.4) }}
+                          className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden"
+                        >
+                          {/* Order Header with Product Preview */}
+                          <div className="flex items-start gap-3 p-4">
+                            <div className="w-16 h-16 rounded-xl overflow-hidden bg-gray-50 flex-shrink-0 border border-gray-100">
+                              <img 
+                                src={order.product_image} 
+                                alt="Producto" 
+                                className="w-full h-full object-cover"
+                                onError={(e) => { (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI0UyRThGMCIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNDAiIHI9IjIwIiBmaWxsPSIjOTRBM0I4Ii8+PHBhdGggZD0iTTIwIDEwMGEzMCAzMCAwIDAgMSA2MCAwIiBmaWxsPSIjOTRBM0I4Ii8+PC9zdmc+'; }}
+                              />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-roboto font-bold text-[13px] text-black truncate">{order.product_name}</p>
+                              <p className="font-roboto font-bold text-[15px] text-primary mt-0.5">{order.total_price}</p>
+                              <div className="flex items-center gap-2 mt-1">
+                                <span className="font-roboto text-[11px] text-gray-400">
+                                  {order.quantity > 1 ? `${order.quantity} unidades · ` : ''}
+                                  {new Date(order.created_at).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Buyer Info - only for sellers */}
+                          {!isUsuario && (
+                          <div className="px-4 pb-3 border-t border-gray-50 pt-3">
+                            <p className="text-[11px] font-bold text-gray-400 uppercase mb-2">Comprador</p>
+                            <div className="space-y-1">
+                              <p className="font-roboto text-[13px] text-black">
+                                <span className="font-medium">👤</span> {order.buyer_name}
+                              </p>
+                              <p className="font-roboto text-[13px] text-gray-600">
+                                <span className="font-medium">📧</span> {order.buyer_email}
+                              </p>
+                              {order.buyer_phone && (
+                                <p className="font-roboto text-[13px] text-gray-600">
+                                  <span className="font-medium">📞</span> {order.buyer_phone}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          )}
+
+                          {/* Delivery Info */}
+                          <div className="px-4 pb-3 border-t border-gray-50 pt-3">
+                            <p className="text-[11px] font-bold text-gray-400 uppercase mb-2">Entrega</p>
+                            <div className="space-y-1">
+                              <p className="font-roboto text-[13px] text-gray-700">
+                                📍 {order.delivery_address}
+                              </p>
+                              {order.meeting_point && (
+                                <p className="font-roboto text-[13px] text-gray-600">
+                                  🤝 {order.meeting_point}
+                                </p>
+                              )}
+                              <p className="font-roboto text-[13px] text-gray-600">
+                                💳 {order.payment_method === 'efectivo' ? 'Efectivo' :
+                                     order.payment_method === 'nequi' ? 'Nequi' :
+                                     order.payment_method === 'daviplata' ? 'Daviplata' :
+                                     order.payment_method === 'bancolombia' ? 'Bancolombia' :
+                                     order.payment_method}
+                              </p>
+                              {order.notes && (
+                                <p className="font-roboto text-[12px] text-gray-500 italic mt-1">
+                                  📝 "{order.notes}"
+                                </p>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Actions (only for pending + seller only) */}
+                          {order.status === 'pending' && !isUsuario && (
+                            <div className="flex gap-2 p-4 border-t border-gray-50 bg-gray-50/50">
+                              <motion.button
+                                whileTap={{ scale: 0.95 }}
+                                onClick={() => handleUpdateOrderStatus(order.id, 'confirmed')}
+                                className="flex-1 h-10 bg-green-500 text-white rounded-xl font-roboto font-bold text-[13px] flex items-center justify-center gap-1.5 hover:bg-green-600 transition-colors"
+                              >
+                                <CheckCircle2 size={15} />
+                                Confirmar
+                              </motion.button>
+                              <motion.button
+                                whileTap={{ scale: 0.95 }}
+                                onClick={() => handleUpdateOrderStatus(order.id, 'cancelled')}
+                                className="flex-1 h-10 bg-white text-red-500 border border-red-200 rounded-xl font-roboto font-bold text-[13px] flex items-center justify-center gap-1.5 hover:bg-red-50 transition-colors"
+                              >
+                                <XCircle size={15} />
+                                Cancelar
+                              </motion.button>
+                            </div>
+                          )}
+
+                          {/* Status Badge */}
+                          {(order.status !== 'pending' || isUsuario) && (
+                            <div className="px-4 pb-3 pt-1">
+                              <div className={cn(
+                                "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-roboto font-bold",
+                                order.status === 'pending' ? 'bg-amber-50 text-amber-600' :
+                                order.status === 'confirmed' ? 'bg-green-50 text-green-600' :
+                                order.status === 'delivered' ? 'bg-blue-50 text-blue-600' :
+                                'bg-red-50 text-red-500'
+                              )}>
+                                {order.status === 'pending' && <Clock size={12} />}
+                                {order.status === 'confirmed' && <CheckCircle2 size={12} />}
+                                {order.status === 'delivered' && <Package size={12} />}
+                                {order.status === 'cancelled' && <XCircle size={12} />}
+                                {order.status === 'pending' ? 'Pendiente' :
+                                 order.status === 'confirmed' ? 'Confirmado' :
+                                 order.status === 'delivered' ? 'Entregado' :
+                                 'Cancelado'}
+                              </div>
+                            </div>
+                          )}
+                        </motion.div>
+                      ))}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
     </MobileContainer>
   );

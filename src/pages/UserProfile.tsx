@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import MobileContainer from '@/components/layout/MobileContainer';
 import BottomNav from '@/components/layout/BottomNav';
-import { ChevronLeft, MoreVertical, MessageCircle, Instagram, Facebook, Star, ChevronRight } from 'lucide-react';
+import { ChevronLeft, MoreVertical, MessageCircle, Instagram, Facebook, Star, ChevronRight, MessageSquare } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useFeedContext, type Review } from '@/contexts/FeedContext';
+import { useStartChat } from '@/hooks/useChat';
 import { cn } from '@/lib/utils';
 import ReviewsModal from '@/components/home/ReviewsModal';
 import { AnimatePresence, motion } from 'motion/react';
@@ -27,6 +28,8 @@ export default function UserProfile() {
   const [showReviewsModal, setShowReviewsModal] = useState(false);
   const [selectedPost, setSelectedPost] = useState<any>(null);
   
+  const { getOrCreateChat, starting } = useStartChat();
+
   const userPosts = posts.filter(p => p.user_id === userId);
   const popular = userPosts.slice().reverse().slice(0, 4);
 
@@ -162,6 +165,14 @@ export default function UserProfile() {
     }
   };
 
+  const handleStartChat = async () => {
+    if (starting || !userId) return;
+    const chatId = await getOrCreateChat(userId);
+    if (chatId) {
+      navigate(`/chat/${chatId}`);
+    }
+  };
+
   if (loading && !targetUser) {
     return (
       <MobileContainer className="bg-white flex items-center justify-center" hideRightSidebar>
@@ -218,6 +229,14 @@ export default function UserProfile() {
                     )}
                   >
                     {isFollowing ? 'Siguiendo' : 'Seguir'}
+                  </button>
+                  <button 
+                    onClick={handleStartChat}
+                    disabled={starting}
+                    className="px-6 py-1.5 bg-gray-100 hover:bg-gray-200 text-black font-roboto font-bold text-sm rounded-xl border border-gray-200 transition-all flex items-center gap-1 disabled:opacity-50"
+                  >
+                    <MessageSquare size={16} />
+                    Mensaje
                   </button>
                   {!isUsuario && (
                     <button 

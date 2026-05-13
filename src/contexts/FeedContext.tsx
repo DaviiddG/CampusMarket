@@ -38,6 +38,23 @@ export interface Post {
   likes: number;
 }
 
+export interface OrderData {
+  post_id: string;
+  seller_id: string;
+  buyer_name: string;
+  buyer_email: string;
+  buyer_phone: string;
+  delivery_address: string;
+  meeting_point: string;
+  payment_method: string;
+  notes: string;
+  quantity: number;
+  total_price: string;
+  product_name: string;
+  product_image: string;
+  product_price: string;
+}
+
 interface FeedContextType {
   posts: Post[];
   savedPostIds: string[];
@@ -54,6 +71,7 @@ interface FeedContextType {
   addReview: (targetUserId: string, rating: number, content: string, imageUrl?: string) => Promise<boolean>;
   getReviews: (targetUserId: string) => Promise<Review[]>;
   getReviewsGiven: (reviewerId: string) => Promise<Review[]>;
+  createOrder: (orderData: OrderData) => Promise<boolean>;
   loading: boolean;
 }
 
@@ -640,9 +658,51 @@ export const FeedProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const createOrder = async (orderData: OrderData): Promise<boolean> => {
+    if (!user) return false;
+    try {
+      const { error } = await supabase.from('orders').insert({
+        post_id: orderData.post_id,
+        buyer_id: user.id,
+        seller_id: orderData.seller_id,
+        buyer_name: orderData.buyer_name,
+        buyer_email: orderData.buyer_email,
+        buyer_phone: orderData.buyer_phone,
+        delivery_address: orderData.delivery_address,
+        meeting_point: orderData.meeting_point,
+        payment_method: orderData.payment_method,
+        notes: orderData.notes,
+        product_name: orderData.product_name,
+        product_image: orderData.product_image,
+        product_price: orderData.product_price,
+        quantity: orderData.quantity,
+        total_price: orderData.total_price,
+        status: 'pending'
+      });
+
+      if (error) throw error;
+
+      // Send notification to seller
+      await supabase.from('notifications').insert({
+        user_id: orderData.seller_id,
+        actor_id: user.id,
+        actor_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Un usuario',
+        actor_avatar: user.user_metadata?.avatar_url || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI0UyRThGMCIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNDAiIHI9IjIwIiBmaWxsPSIjOTRBM0I4Ii8+PHBhdGggZD0iTTIwIDEwMGEzMCAzMCAwIDAgMSA2MCAwIiBmaWxsPSIjOTRBM0I4Ii8+PC9zdmc+',
+        type: 'order',
+        post_id: orderData.post_id,
+        post_image: orderData.product_image
+      });
+
+      return true;
+    } catch (e) {
+      console.error('Error creating order:', e);
+      return false;
+    }
+  };
+
   return (
     <FeedContext.Provider value={{ 
-      posts, savedPostIds, likedPostIds, addPost, deletePost, updatePost, toggleLike, toggleSave, sharePost, addComment, deleteComment, getComments, addReview, getReviews, getReviewsGiven, loading 
+      posts, savedPostIds, likedPostIds, addPost, deletePost, updatePost, toggleLike, toggleSave, sharePost, addComment, deleteComment, getComments, addReview, getReviews, getReviewsGiven, createOrder, loading 
     }}>
       {children}
     </FeedContext.Provider>

@@ -1,5 +1,5 @@
 
-import { Home, Search, Compass, Plus } from 'lucide-react';
+import { Home, Search, Compass, Plus, Send } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useEffect, useState } from 'react';
@@ -39,6 +39,7 @@ export default function BottomNav({ activeTab }: BottomNavProps) {
     : location.pathname === '/profile' ? 'profile'
     : location.pathname === '/search' ? 'search'
     : location.pathname === '/explore' ? 'explore'
+    : location.pathname.startsWith('/chat') ? 'chats'
     : location.pathname === '/upload' ? 'upload'
     : ''
   );
@@ -64,12 +65,20 @@ export default function BottomNav({ activeTab }: BottomNavProps) {
         <Search size={24} strokeWidth={currentTab === 'search' ? 2.5 : 2} />
       </button>
 
-      {/* Explorar (brújula) - Para emprendedores se pone al lado de buscar. Para comunes es el centro. */}
+      {/* Explorar (brújula) */}
       <button
         onClick={() => navigate('/explore')}
         className={`p-2 transition-colors ${currentTab === 'explore' ? 'text-[#102042]' : 'text-black'}`}
       >
         <Compass size={24} strokeWidth={currentTab === 'explore' ? 2.5 : 2} />
+      </button>
+
+      {/* Mensajes */}
+      <button
+        onClick={() => navigate('/chats')}
+        className={`p-2 transition-colors ${currentTab === 'chats' ? 'text-[#102042]' : 'text-black'}`}
+      >
+        <Send size={24} strokeWidth={currentTab === 'chats' ? 2.5 : 2} />
       </button>
 
       {/* Botón + Crear: Solo para emprendedores */}

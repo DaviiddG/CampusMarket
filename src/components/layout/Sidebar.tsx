@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Home, PlusSquare, Bell, LogOut, Compass, Search, Menu } from 'lucide-react';
+import { Home, PlusSquare, Bell, LogOut, Compass, Search, Menu, Send, Receipt } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import logoIconUrl from '@/assets/logo.png';
@@ -105,6 +105,7 @@ export default function Sidebar() {
     { label: 'Inicio',   icon: <Home size={24} />,       path: '/home'    },
     { label: 'Buscar',   icon: <Search size={24} />,     path: '/search'  },
     { label: 'Explorar', icon: <Compass size={24} />,    path: '/explore' },
+    { label: 'Mensajes', icon: <Send size={24} />,       path: '/chats' },
     ...(isEmprendedor
       ? [{ label: 'Crear', icon: <PlusSquare size={24} />, path: '/upload' }]
       : []),
@@ -119,11 +120,27 @@ export default function Sidebar() {
         markAllAsRead();
       },
     },
+    { 
+      label: isEmprendedor ? 'Pedidos' : 'Mis Compras', 
+      icon: <Receipt size={24} />, 
+      path: '/profile?openOrders=true' 
+    },
   ];
 
   const handleLogout = async () => supabase.auth.signOut();
 
-  const isActive = (path: string) => location.pathname === path;
+  const isActive = (path: string) => {
+    if (path === '/chats') {
+      return location.pathname.startsWith('/chat');
+    }
+    if (path === '/profile') {
+      return location.pathname === '/profile' && !location.search.includes('openOrders=true');
+    }
+    if (path.includes('openOrders=true')) {
+      return location.pathname === '/profile' && location.search.includes('openOrders=true');
+    }
+    return location.pathname === path;
+  };
 
   return (
     <aside

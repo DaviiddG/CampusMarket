@@ -4,7 +4,7 @@ import MobileContainer from '@/components/layout/MobileContainer';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { ShimmerButton } from '@/registry/magicui/shimmer-button';
 import { motion, AnimatePresence } from 'motion/react';
-import { Sparkles, Utensils, Shirt, MonitorSmartphone, BookOpen, Coffee, Store, PackagePlus, CheckCircle2 } from 'lucide-react';
+import { Search, Utensils, Shirt, MonitorSmartphone, BookOpen, Coffee, Store, PackagePlus, CheckCircle2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
@@ -75,7 +75,7 @@ export default function Personalization() {
           >
             <div className="flex items-center justify-center w-16 h-16 bg-[#102042] rounded-2xl mb-6 mx-auto shadow-lg shadow-[#102042]/20">
               {isUsuario ? (
-                <Sparkles className="text-white w-8 h-8" />
+                <Search className="text-white w-8 h-8" />
               ) : (
                 <Store className="text-white w-8 h-8" />
               )}
@@ -204,7 +204,7 @@ export default function Personalization() {
                 transition={{ delay: 0.2, type: "spring" }}
               >
                 {isUsuario ? (
-                  <Sparkles className="text-[#9AD7F3] w-12 h-12" />
+                  <Search className="text-[#9AD7F3] w-12 h-12" />
                 ) : (
                   <Store className="text-[#9AD7F3] w-12 h-12" />
                 )}
