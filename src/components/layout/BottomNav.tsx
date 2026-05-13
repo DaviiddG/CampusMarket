@@ -52,6 +52,7 @@ export default function BottomNav({ activeTab }: BottomNavProps) {
       {/* Inicio */}
       <button
         onClick={() => navigate('/home')}
+        data-tour="nav-home"
         className={`p-2 transition-colors ${currentTab === 'home' ? 'text-[#102042]' : 'text-black'}`}
       >
         <Home size={24} strokeWidth={currentTab === 'home' ? 2.5 : 2} />
@@ -60,6 +61,7 @@ export default function BottomNav({ activeTab }: BottomNavProps) {
       {/* Buscar (lupa) */}
       <button
         onClick={() => navigate('/search')}
+        data-tour="nav-search"
         className={`p-2 transition-colors ${currentTab === 'search' ? 'text-[#102042]' : 'text-black'}`}
       >
         <Search size={24} strokeWidth={currentTab === 'search' ? 2.5 : 2} />
@@ -68,6 +70,7 @@ export default function BottomNav({ activeTab }: BottomNavProps) {
       {/* Explorar (brújula) */}
       <button
         onClick={() => navigate('/explore')}
+        data-tour="nav-explore"
         className={`p-2 transition-colors ${currentTab === 'explore' ? 'text-[#102042]' : 'text-black'}`}
       >
         <Compass size={24} strokeWidth={currentTab === 'explore' ? 2.5 : 2} />
@@ -76,6 +79,7 @@ export default function BottomNav({ activeTab }: BottomNavProps) {
       {/* Mensajes */}
       <button
         onClick={() => navigate('/chats')}
+        data-tour="nav-chats"
         className={`p-2 transition-colors ${currentTab === 'chats' ? 'text-[#102042]' : 'text-black'}`}
       >
         <Send size={24} strokeWidth={currentTab === 'chats' ? 2.5 : 2} />
@@ -85,6 +89,7 @@ export default function BottomNav({ activeTab }: BottomNavProps) {
       {isEmprendedor && (
         <button
           onClick={() => navigate('/upload')}
+          data-tour="nav-upload"
           className="w-10 h-10 bg-[#102042] rounded-full flex items-center justify-center text-white hover:bg-blue-900 transition-colors shadow-md"
         >
           <Plus size={22} strokeWidth={2} />
@@ -94,6 +99,7 @@ export default function BottomNav({ activeTab }: BottomNavProps) {
       {/* Perfil */}
       <button
         onClick={() => navigate('/profile')}
+        data-tour="nav-profile"
         className="p-2 transition-all flex items-center justify-center"
       >
         <div

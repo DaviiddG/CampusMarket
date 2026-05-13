@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import MobileContainer from '@/components/layout/MobileContainer';
 import BottomNav from '@/components/layout/BottomNav';
-import { ChevronLeft, LogOut, Grid3X3, Bookmark, Settings, Star, Instagram, Facebook, MessageCircle, ShoppingBag, Package, Clock, CheckCircle2, XCircle } from 'lucide-react';
+import { ChevronLeft, LogOut, Grid3X3, Bookmark, Settings, Star, Instagram, Facebook, MessageCircle, ShoppingBag, Package, Clock, CheckCircle2, XCircle, HelpCircle } from 'lucide-react';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useFeedContext, type Post, type Review } from '@/contexts/FeedContext';
@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
 import ProductCard from '@/components/home/ProductCard';
+import { useTour } from '@/contexts/TourContext';
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -17,6 +18,7 @@ export default function Profile() {
   const { user } = useAuthContext();
   const { signOut } = useAuth();
   const { posts, savedPostIds, getReviews, getReviewsGiven } = useFeedContext();
+  const { startTour } = useTour();
   
   const [activeTab, setActiveTab] = useState<'posts' | 'saved' | 'reviews' | 'purchases'>('posts');
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -337,11 +339,16 @@ export default function Profile() {
           
           {/* Top Bar - Mobile Only */}
           <div className="flex items-center justify-between px-4 pt-6 pb-4 lg:hidden">
-            <button onClick={handleEditProfile} className="p-1 -ml-1 text-black hover:bg-gray-100 rounded-full transition-colors" title="Configuración">
-              <Settings size={28} className="text-black" />
-            </button>
-            <div className="flex items-center justify-center flex-1 px-4 overflow-hidden">
-              <span className="font-roboto font-bold text-[22px] text-black tracking-tight truncate">{displayName}</span>
+            <div className="flex items-center gap-1">
+              <button onClick={handleEditProfile} className="p-2 -ml-2 text-black hover:bg-gray-100 rounded-full transition-colors" title="Configuración">
+                <Settings size={26} />
+              </button>
+              <button onClick={startTour} className="p-2 text-black hover:bg-gray-100 rounded-full transition-colors" title="Ver tutorial">
+                <HelpCircle size={26} />
+              </button>
+            </div>
+            <div className="flex items-center justify-center flex-1 px-2 overflow-hidden">
+              <span className="font-roboto font-bold text-[20px] text-black tracking-tight truncate">{displayName}</span>
             </div>
             <button onClick={handleLogout} className="text-red-500 hover:bg-red-50 p-2 -mr-2 rounded-full transition-colors" title="Cerrar sesión">
               <LogOut size={22} className="opacity-90" />
@@ -428,15 +435,24 @@ export default function Profile() {
 
             {/* Stats & Actions */}
             <div className="flex-1 flex flex-col gap-4">
-              <div className="hidden lg:flex items-center gap-6">
+              <div className="hidden lg:flex items-center gap-4">
                 <h1 className="text-xl font-roboto font-medium text-black">{displayName}</h1>
-                <button 
-                  onClick={handleEditProfile}
-                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                  title="Configuración"
-                >
-                  <Settings size={22} className="text-black" />
-                </button>
+                <div className="flex items-center gap-1">
+                  <button 
+                    onClick={handleEditProfile}
+                    className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                    title="Configuración"
+                  >
+                    <Settings size={22} className="text-black" />
+                  </button>
+                  <button 
+                    onClick={startTour}
+                    className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                    title="Ver tutorial"
+                  >
+                    <HelpCircle size={22} className="text-black" />
+                  </button>
+                </div>
               </div>
 
               <div className="flex justify-between md:justify-start md:gap-10 items-center">

@@ -64,13 +64,18 @@ function AppRoutes() {
 
 import { FeedProvider } from '@/contexts/FeedContext'
 import { NotificationProvider } from '@/contexts/NotificationContext'
+import { TourProvider } from '@/contexts/TourContext'
+import AppTour from '@/components/ui/AppTour'
 
 function App() {
   return (
     <Router>
       <NotificationProvider>
         <FeedProvider>
-          <AppRoutes />
+          <TourProvider>
+            <AppRoutes />
+            <AppTour />
+          </TourProvider>
         </FeedProvider>
       </NotificationProvider>
     </Router>

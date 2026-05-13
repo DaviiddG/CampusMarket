@@ -5,15 +5,26 @@ import BottomNav from '@/components/layout/BottomNav';
 import NotificationsDrawer from '@/components/home/NotificationsDrawer';
 import { Bell, Search } from 'lucide-react';
 import logoUrl from '@/assets/logo.png';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { useNotificationContext } from '@/contexts/NotificationContext';
 import { useFeedContext } from '@/contexts/FeedContext';
+import { useTour } from '@/contexts/TourContext';
 
 export default function Home() {
   const { posts } = useFeedContext();
   const { unreadCount } = useNotificationContext();
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const { startTour, isActive, hasSeenTour, isLoaded } = useTour();
+
+  useEffect(() => {
+    if (isLoaded && !hasSeenTour && !isActive) {
+      const timer = setTimeout(() => {
+        startTour();
+      }, 800);
+      return () => clearTimeout(timer);
+    }
+  }, [isLoaded, hasSeenTour, isActive, startTour]);
 
   return (
     <MobileContainer className="bg-white" justifyCenter={false}>
@@ -30,6 +41,7 @@ export default function Home() {
           <div className="w-10 flex justify-end">
             <button 
               onClick={() => setIsNotificationsOpen(true)}
+              data-tour="notifications"
               className="relative p-2 hover:bg-gray-100 rounded-full transition-colors"
             >
               <motion.div

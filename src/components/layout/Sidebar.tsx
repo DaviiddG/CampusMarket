@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Home, PlusSquare, Bell, LogOut, Compass, Search, Menu, Send, Receipt } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Home, PlusSquare, Bell, LogOut, Compass, Search, Menu, Send, Receipt, HelpCircle } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import logoIconUrl from '@/assets/logo.png';
@@ -7,6 +7,7 @@ import { useNotificationContext } from '@/contexts/NotificationContext';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { motion, AnimatePresence } from 'motion/react';
+import { useTour } from '@/contexts/TourContext';
 
 const DEFAULT_AVATAR =
   'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI0UyRThGMCIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNDAiIHI9IjIwIiBmaWxsPSIjOTRBM0I4Ii8+PHBhdGggZD0iTTIwIDEwMGEzMCAzMCAwIDAgMSA2MCAwIiBmaWxsPSIjOTRBM0I4Ii8+PC9zdmc+';
@@ -50,14 +51,16 @@ interface NavItemProps {
   href: string;
   badge?: number;
   onClick?: (e: React.MouseEvent) => void;
+  tourId?: string;
 }
 
-function NavItem({ label, icon, isActive, href, badge, onClick }: NavItemProps) {
+function NavItem({ label, icon, isActive, href, badge, onClick, tourId }: NavItemProps) {
   return (
     <Tooltip label={label}>
       <Link
         to={href}
         onClick={onClick}
+        data-tour={tourId}
         className={cn(
           'relative flex items-center justify-center w-11 h-11 rounded-xl transition-all duration-200',
           isActive ? 'bg-gray-100 text-black' : 'text-black/70 hover:bg-gray-100 hover:text-black'
@@ -84,8 +87,22 @@ export default function Sidebar() {
   const { unreadCount, markAllAsRead } = useNotificationContext();
   const { user } = useAuthContext();
   const [profileAvatar, setProfileAvatar] = useState<string | null>(null);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const { startTour } = useTour();
+  const moreMenuRef = useRef<HTMLDivElement>(null);
 
   const isEmprendedor = user?.user_metadata?.role === 'emprendedor';
+
+  useEffect(() => {
+    if (!showMoreMenu) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (moreMenuRef.current && !moreMenuRef.current.contains(e.target as Node)) {
+        setShowMoreMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showMoreMenu]);
 
   useEffect(() => {
     if (!user) return;
@@ -102,18 +119,19 @@ export default function Sidebar() {
   const userAvatar = profileAvatar || user?.user_metadata?.avatar_url || DEFAULT_AVATAR;
 
   const navItems = [
-    { label: 'Inicio',   icon: <Home size={24} />,       path: '/home'    },
-    { label: 'Buscar',   icon: <Search size={24} />,     path: '/search'  },
-    { label: 'Explorar', icon: <Compass size={24} />,    path: '/explore' },
-    { label: 'Mensajes', icon: <Send size={24} />,       path: '/chats' },
+    { label: 'Inicio',   icon: <Home size={24} />,       path: '/home',    tourId: 'nav-home'    },
+    { label: 'Buscar',   icon: <Search size={24} />,     path: '/search',  tourId: 'nav-search'  },
+    { label: 'Explorar', icon: <Compass size={24} />,    path: '/explore', tourId: 'nav-explore' },
+    { label: 'Mensajes', icon: <Send size={24} />,       path: '/chats',  tourId: 'nav-chats' },
     ...(isEmprendedor
-      ? [{ label: 'Crear', icon: <PlusSquare size={24} />, path: '/upload' }]
+      ? [{ label: 'Crear', icon: <PlusSquare size={24} />, path: '/upload', tourId: 'nav-upload' }]
       : []),
     {
       label: 'Notificaciones',
       icon: <Bell size={24} />,
       path: '#',
       badge: unreadCount,
+      tourId: 'notifications',
       onClick: (e: React.MouseEvent) => {
         e.preventDefault();
         window.dispatchEvent(new CustomEvent('toggleNotifications'));
@@ -172,6 +190,7 @@ export default function Sidebar() {
             isActive={isActive(item.path)}
             badge={item.badge}
             onClick={item.onClick}
+            tourId={(item as any).tourId}
           />
         ))}
 
@@ -179,6 +198,7 @@ export default function Sidebar() {
         <Tooltip label="Perfil">
           <Link
             to="/profile"
+            data-tour="nav-profile"
             className={cn(
               'flex items-center justify-center w-11 h-11 rounded-xl transition-all duration-200',
               isActive('/profile') ? 'bg-gray-100' : 'hover:bg-gray-100'
@@ -203,13 +223,42 @@ export default function Sidebar() {
 
       {/* ── More & Logout (bottom) ────────────────────────── */}
       <div
-        className="flex flex-col items-center gap-2 pt-4 border-t border-gray-100 w-full"
+        ref={moreMenuRef}
+        className="flex flex-col items-center gap-2 pt-4 border-t border-gray-100 w-full relative"
         style={{ overflow: 'visible' }}
       >
+        {/* Animated Glassmorphism Dropdown for More menu */}
+        <AnimatePresence>
+          {showMoreMenu && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, x: -10 }}
+              animate={{ opacity: 1, scale: 1, x: 0 }}
+              exit={{ opacity: 0, scale: 0.95, x: -10 }}
+              transition={{ duration: 0.12, ease: 'easeOut' }}
+              className="absolute bottom-[60px] left-[50px] bg-white border border-slate-100 shadow-[0_10px_40px_-6px_rgba(0,0,0,0.12)] rounded-xl p-1.5 w-48 z-[100] flex flex-col backdrop-blur-md bg-white/95"
+            >
+              <button
+                onClick={() => {
+                  startTour();
+                  setShowMoreMenu(false);
+                }}
+                className="flex items-center gap-2.5 px-3 py-2 hover:bg-slate-50 rounded-lg text-[13px] font-poppins font-medium text-slate-700 transition-colors w-full text-left"
+              >
+                <HelpCircle size={16} className="text-slate-500" />
+                <span>Ver tutorial</span>
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* More Button */}
         <Tooltip label="Más">
           <button
-            className="flex items-center justify-center w-11 h-11 rounded-xl text-black/70 hover:bg-gray-100 hover:text-black transition-colors"
+            onClick={() => setShowMoreMenu(!showMoreMenu)}
+            className={cn(
+              "flex items-center justify-center w-11 h-11 rounded-xl text-black/70 hover:bg-gray-100 hover:text-black transition-all duration-200",
+              showMoreMenu && "bg-gray-100 text-black"
+            )}
           >
             <Menu size={24} strokeWidth={2} />
           </button>
