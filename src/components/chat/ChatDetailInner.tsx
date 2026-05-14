@@ -231,8 +231,8 @@ export default function ChatDetailInner({ chatId }: ChatDetailInnerProps) {
                     <div className={cn(
                       "max-w-[75%] rounded-2xl px-4 py-2.5 break-words relative shadow-sm group/bubble transition-all duration-200",
                       isMe 
-                        ? "bg-[#D9FDD3] text-black rounded-tr-sm" 
-                        : "bg-white text-black rounded-tl-sm",
+                        ? "bg-[#5BB6F4] text-white rounded-tr-sm" 
+                        : "bg-white text-black border border-gray-100 rounded-tl-sm",
                       message.is_deleted_for_everyone && "bg-gray-100 text-gray-400 italic shadow-none border border-gray-200 bg-opacity-50 rounded-tl-sm rounded-tr-sm !self-start"
                     )}>
                       {/* Dropdown Trigger Icon */}
@@ -290,7 +290,10 @@ export default function ChatDetailInner({ chatId }: ChatDetailInnerProps) {
                         </p>
                       )}
 
-                      <span className="text-[10px] text-gray-400 float-right mt-1 ml-3 relative top-0.5 select-none">
+                      <span className={cn(
+                        "text-[10px] float-right mt-1 ml-3 relative top-0.5 select-none",
+                        isMe ? "text-white/70" : "text-gray-400"
+                      )}>
                         {format(new Date(message.created_at), 'HH:mm')}
                       </span>
                     </div>

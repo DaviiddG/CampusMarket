@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useTour } from '@/contexts/TourContext';
 import { motion, AnimatePresence } from 'motion/react';
-import { ChevronRight, ChevronLeft, X, Sparkles } from 'lucide-react';
+import { ChevronRight, ChevronLeft, X, Compass, Home, Search, Bell, Send, Plus, User, Rocket, CheckCircle, Settings, Bookmark, Heart, MoveRight } from 'lucide-react';
 
 export default function AppTour() {
   const {
@@ -223,41 +223,57 @@ export default function AppTour() {
             ...tooltipPosition
           }}
           transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-          className="absolute z-[100000] pointer-events-auto w-full max-w-[340px] xs:max-w-[360px] bg-white/95 backdrop-blur-xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.3)] border border-slate-200/80 rounded-2xl p-5 overflow-hidden flex flex-col"
+          className="absolute z-[100000] pointer-events-auto w-full max-w-[340px] xs:max-w-[380px] bg-white shadow-[0_30px_60px_-15px_rgba(0,0,0,0.3)] border border-slate-200 rounded-3xl p-6 overflow-hidden flex flex-col"
         >
-          {/* Top Glowing Accented Border Accent */}
-          <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-[#102042] via-[#5BB6F4] to-[#102042]" />
+          {/* Subtle Corner Accent */}
+          <div className="absolute top-0 right-0 w-24 h-24 bg-black/5 rounded-full -mr-10 -mt-10 blur-2xl pointer-events-none" />
 
           {/* Header */}
-          <div className="flex items-start justify-between mb-3">
-            <div className="flex items-center gap-2">
-              {!hasTarget && <Sparkles className="text-[#5BB6F4] animate-pulse" size={18} />}
-              <span className="font-poppins font-extrabold text-[16px] leading-tight text-[#102042]">
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex items-center gap-2.5">
+              <div className="w-10 h-10 rounded-2xl bg-black flex items-center justify-center border border-black shadow-lg shadow-black/10">
+                {currentStep.icon === 'home' && <Home className="text-white" size={20} />}
+                {currentStep.icon === 'search' && <Search className="text-white" size={20} />}
+                {currentStep.icon === 'explore' && <Compass className="text-white" size={20} />}
+                {currentStep.icon === 'bell' && <Bell className="text-white" size={20} />}
+                {currentStep.icon === 'send' && <Send className="text-white" size={20} />}
+                {currentStep.icon === 'plus' && <Plus className="text-white" size={20} />}
+                {currentStep.icon === 'user' && <User className="text-white" size={20} />}
+                {currentStep.icon === 'rocket' && <Rocket className="text-white" size={20} />}
+                {currentStep.icon === 'check-circle' && <CheckCircle className="text-white" size={20} />}
+                {currentStep.icon === 'settings' && <Settings className="text-white" size={20} />}
+                {currentStep.icon === 'bookmark' && <Bookmark className="text-white" size={20} />}
+                {currentStep.icon === 'heart' && <Heart className="text-white" size={20} />}
+                {!currentStep.icon && (
+                  <div className="w-2.5 h-2.5 rounded-full bg-white animate-pulse" />
+                )}
+              </div>
+              <span className="font-roboto font-bold text-[18px] tracking-tight leading-tight text-black">
                 {currentStep.title}
               </span>
             </div>
             <button 
               onClick={stopTour}
-              className="p-1 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors flex-shrink-0 ml-2"
+              className="p-1.5 rounded-full hover:bg-slate-50 text-slate-400 hover:text-black transition-all flex-shrink-0"
             >
-              <X size={16} />
+              <X size={18} />
             </button>
           </div>
-
+ 
           {/* Content Text */}
-          <p className="font-roboto text-[14px] leading-[1.5] text-slate-600 mb-5">
+          <p className="font-roboto font-normal text-[15px] leading-relaxed text-slate-800 mb-8">
             {currentStep.description}
           </p>
 
           {/* Footer Navigation */}
-          <div className="flex items-center justify-between mt-auto pt-3 border-t border-slate-100">
-            {/* Progress Stepper Dots */}
+          <div className="flex items-center justify-between mt-auto px-4 pb-2">
+            {/* Progress Stepper Dots - Minimalist */}
             <div className="flex gap-1.5 items-center">
               {steps.map((_, idx) => (
                 <div 
                   key={idx} 
-                  className={`h-1.5 rounded-full transition-all duration-300 ${
-                    idx === currentStepIndex ? 'w-4 bg-[#5BB6F4]' : 'w-1.5 bg-slate-200'
+                  className={`h-1 rounded-full transition-all duration-500 ${
+                    idx === currentStepIndex ? 'w-5 bg-black' : 'w-1.5 bg-slate-200'
                   }`} 
                 />
               ))}
@@ -268,15 +284,15 @@ export default function AppTour() {
               {currentStepIndex > 0 && (
                 <button
                   onClick={prevStep}
-                  className="flex items-center justify-center w-8 h-8 rounded-full border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-[#102042] transition-colors"
+                  className="flex items-center justify-center h-10 px-3 text-slate-400 hover:text-black transition-colors font-roboto text-[13px] font-medium"
                 >
-                  <ChevronLeft size={16} />
+                  Atrás
                 </button>
               )}
               
               <button
                 onClick={nextStep}
-                className="flex items-center gap-1 bg-[#102042] text-white px-4 py-2 rounded-xl font-poppins font-semibold text-[13px] shadow-md shadow-[#102042]/20 hover:bg-[#0d1a36] active:scale-95 transition-all"
+                className="flex items-center gap-1 px-6 py-2.5 border-2 border-black text-black font-roboto font-medium text-[14px] hover:bg-black hover:text-white transition-all duration-300 active:scale-95"
               >
                 <span>{isLastStep ? '¡Empezar!' : 'Siguiente'}</span>
                 {!isLastStep && <ChevronRight size={14} />}

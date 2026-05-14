@@ -292,7 +292,7 @@ export default function UserProfile() {
                   <div className="flex items-center gap-4 pt-2">
                     {targetUser?.whatsapp && (
                       <a 
-                        href={`https://wa.me/${targetUser.whatsapp.replace(/\+/g, '')}`} 
+                        href={`https://api.whatsapp.com/send?phone=57${targetUser.whatsapp.replace(/\D/g, '').replace(/^57/, '')}`} 
                         target="_blank" 
                         rel="noreferrer" 
                         className="p-2 bg-[#25D366]/10 text-[#25D366] rounded-xl hover:bg-[#25D366]/20 transition-colors"
@@ -460,7 +460,7 @@ export default function UserProfile() {
                     </p>
                   </div>
                 </div>
-              ) : (
+              ) : (isUsuario ? reviewsGiven.length : reviews.length) === 0 ? (
                 <div className="px-6 py-8 text-center bg-gray-50/50 mx-6 rounded-2xl border border-gray-100 border-dashed">
                   <Star size={24} className="mx-auto mb-2 text-gray-300" />
                   <p className="text-gray-400 text-sm font-roboto mb-4">{isUsuario ? 'Este usuario no ha escrito reseñas.' : 'Aún no hay reseñas para este negocio.'}</p>
@@ -473,7 +473,7 @@ export default function UserProfile() {
                     </button>
                   )}
                 </div>
-              )}
+              ) : null}
             </section>
           </div>
         </div>

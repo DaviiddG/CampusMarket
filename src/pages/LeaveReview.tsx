@@ -94,11 +94,11 @@ export default function LeaveReview() {
       }
 
       // 2. Add review
-      const success = await addReview(userId, rating, reviewText, imageUrl);
+      const { success, error } = await addReview(userId, rating, reviewText, imageUrl);
       if (success) {
         navigate(-1);
       } else {
-        alert('Error al enviar la reseña. Es posible que ya hayas dejado una reseña para este usuario.');
+        alert('Error al enviar la reseña: ' + (error || 'Ocurrió un problema inesperado.'));
       }
     } catch (e: any) {
       console.error('Error in review submission:', e);

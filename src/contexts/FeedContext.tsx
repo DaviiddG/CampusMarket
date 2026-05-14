@@ -68,7 +68,7 @@ interface FeedContextType {
   addComment: (postId: string, text: string) => Promise<boolean>;
   deleteComment: (commentId: string) => Promise<boolean>;
   getComments: (postId: string) => Promise<Comment[]>;
-  addReview: (targetUserId: string, rating: number, content: string, imageUrl?: string) => Promise<boolean>;
+  addReview: (targetUserId: string, rating: number, content: string, imageUrl?: string) => Promise<{ success: boolean; error?: string }>;
   getReviews: (targetUserId: string) => Promise<Review[]>;
   getReviewsGiven: (reviewerId: string) => Promise<Review[]>;
   createOrder: (orderData: OrderData) => Promise<boolean>;
@@ -477,7 +477,7 @@ export const FeedProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const addReview = async (targetUserId: string, rating: number, content: string, imageUrl?: string) => {
-    if (!user) return false;
+    if (!user) return { success: false, error: 'Usuario no autenticado' };
     try {
       const userName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Usuario';
       const userAvatar = user.user_metadata?.avatar_url;
@@ -489,28 +489,36 @@ export const FeedProvider = ({ children }: { children: ReactNode }) => {
         avatar_url: userAvatar || null
       }, { onConflict: 'id', ignoreDuplicates: false });
 
-      const { error } = await supabase.from('reviews').insert({
+      const { error: insertError } = await supabase.from('reviews').insert({
         target_user_id: targetUserId,
         reviewer_id: user.id,
-        rating,
+        rating: Math.round(rating), // Temporarily round for INTEGER compatibility. Run fix_reviews_decimal.sql to support decimals.
         content,
         image_url: imageUrl
       });
 
-      if (error) throw error;
+      if (insertError) {
+        console.error('Error inserting review:', insertError);
+        // Check for common errors like unique constraint
+        if (insertError.code === '23505') {
+          return { success: false, error: 'Ya has dejado una reseña para este usuario.' };
+        }
+        return { success: false, error: insertError.message };
+      }
 
+      // Fix notification type and send it
       await supabase.from('notifications').insert({
         user_id: targetUserId,
         actor_id: user.id,
         actor_name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Usuario',
         actor_avatar: user?.user_metadata?.avatar_url,
-        type: 'follow',
+        type: 'review',
       });
 
-      return true;
-    } catch (e) {
+      return { success: true };
+    } catch (e: any) {
       console.error('Error adding review:', e);
-      return false;
+      return { success: false, error: e.message || 'Error desconocido' };
     }
   };
 

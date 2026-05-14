@@ -27,7 +27,7 @@ export default function Checkout() {
   const [paymentMethod, setPaymentMethod] = useState('efectivo');
   const [notes, setNotes] = useState('');
   const [quantity, setQuantity] = useState(1);
-
+  const [deliveryMethod, setDeliveryMethod] = useState<'domicilio' | 'encuentro'>('domicilio');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
@@ -44,7 +44,11 @@ export default function Checkout() {
       .eq('id', user.id)
       .single()
       .then(({ data }) => {
-        if (data?.phone) setBuyerPhone(data.phone);
+        if (data?.phone) {
+          // Remove 57 prefix if present
+          const cleanPhone = data.phone.replace(/^57/, '');
+          setBuyerPhone(cleanPhone);
+        }
       });
   }, [user]);
 
@@ -65,8 +69,9 @@ export default function Checkout() {
     if (!post || !user) return;
 
     // Validation
-    if (!buyerName.trim() || !buyerEmail.trim() || !deliveryAddress.trim()) {
-      alert('Por favor completa los campos obligatorios: nombre, email y dirección de entrega.');
+    const isDeliveryValid = deliveryMethod === 'domicilio' ? deliveryAddress.trim() : meetingPoint.trim();
+    if (!buyerName.trim() || !buyerEmail.trim() || !isDeliveryValid) {
+      alert(`Por favor completa los campos obligatorios: nombre, email y ${deliveryMethod === 'domicilio' ? 'dirección de entrega' : 'punto de encuentro'}.`);
       return;
     }
 
@@ -78,8 +83,8 @@ export default function Checkout() {
       buyer_name: buyerName.trim(),
       buyer_email: buyerEmail.trim(),
       buyer_phone: buyerPhone.trim(),
-      delivery_address: deliveryAddress.trim(),
-      meeting_point: meetingPoint.trim(),
+      delivery_address: deliveryMethod === 'domicilio' ? deliveryAddress.trim() : '',
+      meeting_point: deliveryMethod === 'encuentro' ? meetingPoint.trim() : '',
       payment_method: paymentMethod,
       notes: notes.trim(),
       quantity,
@@ -259,7 +264,10 @@ export default function Checkout() {
                     <input
                       type="tel"
                       value={buyerPhone}
-                      onChange={(e) => setBuyerPhone(e.target.value)}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/^57/, '');
+                        setBuyerPhone(val);
+                      }}
                       placeholder="300 123 4567"
                       className="w-full h-[46px] bg-gray-50 rounded-xl border border-gray-100 px-4 font-roboto text-[14px] text-black placeholder:text-gray-300 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all outline-none"
                     />
@@ -276,30 +284,73 @@ export default function Checkout() {
                   <h2 className="font-roboto font-bold text-[15px] text-[#102042]">Datos de entrega</h2>
                 </div>
 
+                {/* Delivery Method Selector */}
+                <div className="flex p-1 bg-gray-50 rounded-2xl mb-6">
+                  <button
+                    onClick={() => setDeliveryMethod('domicilio')}
+                    className={cn(
+                      "flex-1 py-3 rounded-xl text-sm font-roboto font-bold transition-all",
+                      deliveryMethod === 'domicilio' 
+                        ? "bg-white text-[#102042] shadow-sm" 
+                        : "text-gray-400 hover:text-gray-600"
+                    )}
+                  >
+                    A domicilio
+                  </button>
+                  <button
+                    onClick={() => setDeliveryMethod('encuentro')}
+                    className={cn(
+                      "flex-1 py-3 rounded-xl text-sm font-roboto font-bold transition-all",
+                      deliveryMethod === 'encuentro' 
+                        ? "bg-white text-[#102042] shadow-sm" 
+                        : "text-gray-400 hover:text-gray-600"
+                    )}
+                  >
+                    Encuentro programado
+                  </button>
+                </div>
+
                 <div className="space-y-4">
-                  <div>
-                    <label className="block text-[11px] font-bold text-gray-400 uppercase mb-1.5 ml-1">Dirección de entrega *</label>
-                    <textarea
-                      value={deliveryAddress}
-                      onChange={(e) => setDeliveryAddress(e.target.value)}
-                      placeholder="Ej: Edificio A, Oficina 301, Universidad..."
-                      rows={2}
-                      className="w-full bg-gray-50 rounded-xl border border-gray-100 px-4 py-3 font-roboto text-[14px] text-black placeholder:text-gray-300 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all outline-none resize-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-bold text-gray-400 uppercase mb-1.5 ml-1">
-                      <MapPin size={12} className="inline mr-1" />
-                      Punto de encuentro en campus
-                    </label>
-                    <input
-                      type="text"
-                      value={meetingPoint}
-                      onChange={(e) => setMeetingPoint(e.target.value)}
-                      placeholder="Ej: Cafetería central, Bloque B..."
-                      className="w-full h-[46px] bg-gray-50 rounded-xl border border-gray-100 px-4 font-roboto text-[14px] text-black placeholder:text-gray-300 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all outline-none"
-                    />
-                  </div>
+                  <AnimatePresence mode="wait">
+                    {deliveryMethod === 'domicilio' ? (
+                      <motion.div
+                        key="domicilio"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <label className="block text-[11px] font-bold text-gray-400 uppercase mb-1.5 ml-1">Dirección de entrega *</label>
+                        <textarea
+                          value={deliveryAddress}
+                          onChange={(e) => setDeliveryAddress(e.target.value)}
+                          placeholder="Ej: Edificio A, Oficina 301, Universidad..."
+                          rows={2}
+                          className="w-full bg-gray-50 rounded-xl border border-gray-100 px-4 py-3 font-roboto text-[14px] text-black placeholder:text-gray-300 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all outline-none resize-none"
+                        />
+                      </motion.div>
+                    ) : (
+                      <motion.div
+                        key="encuentro"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <label className="block text-[11px] font-bold text-gray-400 uppercase mb-1.5 ml-1">
+                          <MapPin size={12} className="inline mr-1" />
+                          Punto de encuentro en campus *
+                        </label>
+                        <input
+                          type="text"
+                          value={meetingPoint}
+                          onChange={(e) => setMeetingPoint(e.target.value)}
+                          placeholder="Ej: Bienestar, Campus, Biblioteca..."
+                          className="w-full h-[46px] bg-gray-50 rounded-xl border border-gray-100 px-4 font-roboto text-[14px] text-black placeholder:text-gray-300 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all outline-none"
+                        />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               </div>
 
@@ -455,15 +506,15 @@ export default function Checkout() {
               {/* Submit Button — Desktop only */}
               <div className="hidden lg:block">
                 <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.97 }}
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.98 }}
                   disabled={isSubmitting}
                   onClick={handleSubmit}
-                  className="w-full h-[56px] bg-gradient-to-r from-primary to-[#1a3a6b] text-white rounded-2xl font-roboto font-bold text-[16px] shadow-xl shadow-primary/25 flex items-center justify-center gap-2 disabled:opacity-50 transition-all"
+                  className="w-full h-14 border-2 border-black text-black font-roboto font-bold text-[15px] hover:bg-black hover:text-white transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   {isSubmitting ? (
                     <div className="flex items-center gap-2">
-                      <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                      <div className="w-5 h-5 border-2 border-black/20 border-t-black rounded-full animate-spin" />
                       <span>Procesando...</span>
                     </div>
                   ) : (
@@ -485,15 +536,15 @@ export default function Checkout() {
               {/* Submit Button — Mobile only (moved here to be at the absolute bottom) */}
               <div className="lg:hidden pb-6">
                 <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.97 }}
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.98 }}
                   disabled={isSubmitting}
                   onClick={handleSubmit}
-                  className="w-full h-[56px] bg-gradient-to-r from-primary to-[#1a3a6b] text-white rounded-2xl font-roboto font-bold text-[16px] shadow-xl shadow-primary/25 flex items-center justify-center gap-2 disabled:opacity-50 transition-all"
+                  className="w-full h-14 border-2 border-black text-black font-roboto font-bold text-[15px] hover:bg-black hover:text-white transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   {isSubmitting ? (
                     <div className="flex items-center gap-2">
-                      <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                      <div className="w-5 h-5 border-2 border-black/20 border-t-black rounded-full animate-spin" />
                       <span>Procesando...</span>
                     </div>
                   ) : (

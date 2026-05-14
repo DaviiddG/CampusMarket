@@ -18,7 +18,7 @@ export default function Profile() {
   const { user } = useAuthContext();
   const { signOut } = useAuth();
   const { posts, savedPostIds, getReviews, getReviewsGiven } = useFeedContext();
-  const { startTour } = useTour();
+  const { startTour, startProfileTour } = useTour();
   
   const [activeTab, setActiveTab] = useState<'posts' | 'saved' | 'reviews' | 'purchases'>('posts');
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -33,7 +33,13 @@ export default function Profile() {
     facebook?: string;
     location?: string;
     bio?: string;
-  }>({});
+  }>({
+    whatsapp: user?.user_metadata?.whatsapp || '',
+    instagram: user?.user_metadata?.instagram || '',
+    facebook: user?.user_metadata?.facebook || '',
+    location: user?.user_metadata?.location || '',
+    bio: user?.user_metadata?.bio || '',
+  });
   const [isRemovingAvatar, setIsRemovingAvatar] = useState(false);
   const [showPhotoMenu, setShowPhotoMenu] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -49,6 +55,14 @@ export default function Profile() {
   const isUsuario = role === 'usuario';
   const avatarUrl = profileAvatar || user?.user_metadata?.avatar_url || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI0UyRThGMCIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNDAiIHI9IjIwIiBmaWxsPSIjOTRBM0I4Ii8+PHBhdGggZD0iTTIwIDEwMGEzMCAzMCAwIDAgMSA2MCAwIiBmaWxsPSIjOTRBM0I4Ii8+PC9zdmc+';
 
+  const displayData = {
+    whatsapp: profileData.whatsapp || user?.user_metadata?.whatsapp || '',
+    instagram: profileData.instagram || user?.user_metadata?.instagram || '',
+    facebook: profileData.facebook || user?.user_metadata?.facebook || '',
+    location: profileData.location || user?.user_metadata?.location || '',
+    bio: profileData.bio || user?.user_metadata?.bio || '',
+  };
+
   useEffect(() => {
     // For users, only reset to 'saved' if the active tab is one that doesn't exist for them (posts/reviews)
     if (isUsuario && (activeTab === 'posts' || activeTab === 'reviews')) {
@@ -61,6 +75,16 @@ export default function Profile() {
 
   useEffect(() => {
     if (!user) return;
+
+    // Pre-fill profile data from user metadata to avoid flicker while DB fetch completes
+    setProfileData(prev => ({
+      ...prev,
+      whatsapp: user.user_metadata?.whatsapp || prev.whatsapp || '',
+      instagram: user.user_metadata?.instagram || prev.instagram || '',
+      facebook: user.user_metadata?.facebook || prev.facebook || '',
+      location: user.user_metadata?.location || prev.location || '',
+      bio: user.user_metadata?.bio || prev.bio || '',
+    }));
     
     const fetchFollows = async () => {
       const { count: followers } = await supabase
@@ -207,8 +231,10 @@ export default function Profile() {
     const params = new URLSearchParams(location.search);
     if (params.get('openOrders') === 'true') {
       handleOpenOrders();
+      // Clean up URL to prevent opening on every refresh
+      navigate(location.pathname, { replace: true });
     }
-  }, [location.search]);
+  }, [location.search, location.pathname, navigate]);
 
   const handleUpdateOrderStatus = async (orderId: string, newStatus: string) => {
     try {
@@ -343,7 +369,7 @@ export default function Profile() {
               <button onClick={handleEditProfile} className="p-2 -ml-2 text-black hover:bg-gray-100 rounded-full transition-colors" title="Configuración">
                 <Settings size={26} />
               </button>
-              <button onClick={startTour} className="p-2 text-black hover:bg-gray-100 rounded-full transition-colors" title="Ver tutorial">
+              <button onClick={startProfileTour} className="p-2 text-black hover:bg-gray-100 rounded-full transition-colors" title="Ver tutorial de perfil">
                 <HelpCircle size={26} />
               </button>
             </div>
@@ -356,7 +382,7 @@ export default function Profile() {
           </div>
 
           {/* Profile Stats Header - Responsive */}
-          <div className="flex items-center gap-10 px-6 mt-8 mb-8">
+          <div className="flex items-center gap-10 px-6 mt-8 mb-8" data-tour="profile-header">
             {/* Avatar & Cloud Menu Container */}
             <div className="relative flex-shrink-0">
               <div 
@@ -446,9 +472,8 @@ export default function Profile() {
                     <Settings size={22} className="text-black" />
                   </button>
                   <button 
-                    onClick={startTour}
+                    onClick={startProfileTour}
                     className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                    title="Ver tutorial"
                   >
                     <HelpCircle size={22} className="text-black" />
                   </button>
@@ -491,22 +516,22 @@ export default function Profile() {
             {displayName} {role === 'emprendedor' && <span className="opacity-0">✨</span>}
           </h2>
           <p className="font-roboto font-light text-[14px] leading-[18px] text-black">
-            {profileData.bio || user?.user_metadata?.bio || (role === 'emprendedor' 
+            {displayData.bio || (role === 'emprendedor' 
               ? 'Emprendimiento universitario enfocado en crecer y conectar con todos los estudiantes. 🚀' 
               : 'Apoyando el talento universitario y descubriendo nuevos productos aquí en la U. 🎓')}
           </p>
-          {profileData.location && (
+          {displayData.location && (
             <p className="font-roboto text-[13px] text-gray-500 mt-1">
-              📍 {profileData.location}
+              📍 {displayData.location}
             </p>
           )}
 
           {/* Social Links */}
-          {(profileData.whatsapp || profileData.instagram || profileData.facebook) && (
+          {(displayData.whatsapp || displayData.instagram || displayData.facebook) && (
             <div className="flex items-center gap-4 pt-3">
-              {profileData.whatsapp && (
+              {displayData.whatsapp && (
                 <a 
-                  href={`https://wa.me/${profileData.whatsapp.replace(/\+/g, '')}`} 
+                  href={`https://api.whatsapp.com/send?phone=57${displayData.whatsapp.replace(/\D/g, '').replace(/^57/, '')}`} 
                   target="_blank" 
                   rel="noreferrer" 
                   className="p-2 bg-[#25D366]/10 text-[#25D366] rounded-xl hover:bg-[#25D366]/20 transition-colors"
@@ -515,9 +540,9 @@ export default function Profile() {
                   <MessageCircle size={22} />
                 </a>
               )}
-              {profileData.instagram && (
+              {displayData.instagram && (
                 <a 
-                  href={`https://instagram.com/${profileData.instagram}`} 
+                  href={`https://instagram.com/${displayData.instagram}`} 
                   target="_blank" 
                   rel="noreferrer" 
                   className="p-2 bg-[#E1306C]/10 text-[#E1306C] rounded-xl hover:bg-[#E1306C]/20 transition-colors"
@@ -526,9 +551,9 @@ export default function Profile() {
                   <Instagram size={22} />
                 </a>
               )}
-              {profileData.facebook && (
+              {displayData.facebook && (
                 <a 
-                  href={`https://facebook.com/${profileData.facebook}`} 
+                  href={`https://facebook.com/${displayData.facebook}`} 
                   target="_blank" 
                   rel="noreferrer" 
                   className="p-2 bg-[#1877F2]/10 text-[#1877F2] rounded-xl hover:bg-[#1877F2]/20 transition-colors"
@@ -544,6 +569,7 @@ export default function Profile() {
         {/* Action Buttons */}
         <div className="flex items-center justify-between gap-2 px-6 mb-6">
           <button 
+            data-tour="edit-profile"
             onClick={handleEditProfile}
             className="flex-1 h-[32px] bg-[#E8E8E8] rounded-md font-roboto font-bold text-[13px] text-black flex items-center justify-center hover:bg-gray-300 transition-colors">
             Editar Perfil
@@ -579,6 +605,7 @@ export default function Profile() {
               )}
             </button>
             <button 
+              data-tour="tab-saved"
               className="flex-1 py-3 flex justify-center items-center relative"
               onClick={() => setActiveTab('saved')}
             >
@@ -588,6 +615,7 @@ export default function Profile() {
               )}
             </button>
             <button 
+              data-tour="tab-reviews"
               className="flex-1 py-3 flex justify-center items-center relative"
               onClick={() => setActiveTab('reviews')}
             >

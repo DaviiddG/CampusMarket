@@ -250,14 +250,6 @@ export default function ProductCard({
               >
                 {isFollowing ? 'Siguiendo' : 'Seguir'}
               </button>
-              <button 
-                onClick={handleStartChat}
-                disabled={starting}
-                className="font-roboto font-bold text-[13px] text-black hover:text-gray-700 transition-colors flex-shrink-0 disabled:opacity-50 flex items-center gap-1"
-              >
-                <MessageSquare size={13} />
-                Mensaje
-              </button>
             </>
           )}
         </div>

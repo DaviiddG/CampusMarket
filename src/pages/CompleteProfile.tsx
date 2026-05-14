@@ -43,7 +43,7 @@ export default function CompleteProfile() {
           if (data.location) setLocation(data.location);
           if (data.phone) {
             // Strip leading '57' country code if present, since the form adds it visually
-            const raw = data.phone.replace(/^\+?57/, '');
+            const raw = data.phone.replace(/^57/, '').replace(/^\+?57/, '');
             setPhone(raw);
           }
           if (data.instagram) setInstagram(data.instagram);
@@ -87,6 +87,9 @@ export default function CompleteProfile() {
         avatarUrl = publicData.publicUrl;
       }
       
+      // Clean phone number: remove non-digits and strip leading 57 or +57
+      const cleanPhone = phone.replace(/\D/g, '').replace(/^(57|\+57)/, '');
+
       // 2. Set the backend auth metadata
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
@@ -97,7 +100,7 @@ export default function CompleteProfile() {
       const { error } = await supabase.auth.updateUser({ 
         data: { 
           profile_completed: true,
-          phone_number: phone,
+          phone_number: cleanPhone,
           bio: bio,
           avatar_url: avatarUrl
         } 
@@ -113,9 +116,9 @@ export default function CompleteProfile() {
           business_name: initialName,
           bio,
           location,
-          phone: `57${phone}`,
+          phone: cleanPhone,
           avatar_url: avatarUrl,
-          whatsapp: `57${phone}`,
+          whatsapp: cleanPhone,
           instagram,
           facebook,
           updated_at: new Date().toISOString(),
