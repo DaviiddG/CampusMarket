@@ -565,7 +565,7 @@ export default function ProductCard({
         {showEditModal && (
           <div className="fixed inset-0 z-[60] flex flex-col bg-[#F9FAFB]">
             {/* Header */}
-            <div className="flex items-center justify-between px-4 h-16 bg-white border-b border-gray-100 sticky top-0 z-10">
+            <div className="flex items-center justify-between px-4 pt-12 lg:pt-0 h-24 lg:h-16 bg-white border-b border-gray-100 sticky top-0 z-10">
               <button 
                 onClick={() => setShowEditModal(false)}
                 className="text-gray-500 font-roboto text-[15px] hover:text-black transition-colors"
