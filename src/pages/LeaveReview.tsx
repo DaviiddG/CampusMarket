@@ -42,25 +42,47 @@ export default function LeaveReview() {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  const handlePointerMove = (e: React.PointerEvent) => {
-    if (!starsContainerRef.current) return;
+  const isDragging = useRef(false);
+
+  const calculateRating = (clientX: number) => {
+    if (!starsContainerRef.current) return 0;
     const rect = starsContainerRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
+    const x = clientX - rect.left;
     const width = rect.width;
     const rawRating = (x / width) * 5;
     
     // Round to nearest 0.5
     const roundedRating = Math.ceil(rawRating * 2) / 2;
-    setHoverRating(Math.max(0.5, Math.min(5, roundedRating)));
+    return Math.max(0.5, Math.min(5, roundedRating));
   };
 
-  const handlePointerLeave = () => {
+  const handlePointerDown = (e: React.PointerEvent) => {
+    isDragging.current = true;
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    const newRating = calculateRating(e.clientX);
+    setRating(newRating);
+    setHoverRating(newRating);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!starsContainerRef.current) return;
+    const newRating = calculateRating(e.clientX);
+    
+    if (isDragging.current) {
+      setRating(newRating);
+    }
+    setHoverRating(newRating);
+  };
+
+  const handlePointerUp = (e: React.PointerEvent) => {
+    isDragging.current = false;
+    (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
     setHoverRating(0);
   };
 
-  const handlePointerClick = () => {
-    if (hoverRating > 0) {
-      setRating(hoverRating);
+  const handlePointerLeave = () => {
+    if (!isDragging.current) {
+      setHoverRating(0);
     }
   };
 
@@ -147,9 +169,10 @@ export default function LeaveReview() {
             
             <div 
               ref={starsContainerRef}
+              onPointerDown={handlePointerDown}
               onPointerMove={handlePointerMove}
+              onPointerUp={handlePointerUp}
               onPointerLeave={handlePointerLeave}
-              onClick={handlePointerClick}
               className="flex items-center justify-center gap-3 touch-none select-none relative"
             >
               {[1, 2, 3, 4, 5].map((index) => {
