@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Heart, UserPlus, MessageCircle, Send, BellOff, ShoppingBag, Package } from 'lucide-react';
+import { X, Heart, UserPlus, MessageCircle, Send, BellOff, ShoppingBag, Package, Star } from 'lucide-react';
 import { useNotificationContext, type Notification } from '@/contexts/NotificationContext';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -31,7 +31,7 @@ export default function NotificationsDrawer({ isOpen, onClose }: NotificationsDr
       case 'share': return <Send size={16} className="text-blue-500" />;
       case 'order': return <ShoppingBag size={16} className="text-green-600" />;
       case 'order_confirmed': return <Package size={16} className="text-blue-500" />;
-      case 'review': return <StarIcon size={16} className="text-yellow-400 fill-yellow-400" />;
+      case 'review': return <Star size={16} className="text-yellow-400 fill-yellow-400" />;
       default: return null;
     }
   };

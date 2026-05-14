@@ -170,7 +170,7 @@ export const FeedProvider = ({ children }: { children: ReactNode }) => {
 
       // Enrich post avatars from profiles table (fresher source)
       const uniqueUserIds = Array.from(new Set(activePosts.map(p => p.user_id)));
-      const profileMap: Record<string, { avatar_url?: string; business_name?: string }> = {};
+      const profileMap: Record<string, { avatar_url?: string; business_name?: string; role?: string }> = {};
 
       if (uniqueUserIds.length > 0) {
         const { data: profileData } = await supabase

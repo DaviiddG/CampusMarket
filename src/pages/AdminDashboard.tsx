@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import MobileContainer from '@/components/layout/MobileContainer';
 import { supabase } from '@/lib/supabase';
-import { Trash2, UserX, Key, ShieldAlert, BarChart3, Users, Package, LogOut, ChevronRight, Search, Star, MessageSquare, Home } from 'lucide-react';
+import { Trash2, UserX, ShieldAlert, BarChart3, Users, Package, LogOut, ChevronRight, Search, Home } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/lib/utils';
@@ -186,7 +186,7 @@ export default function AdminDashboard() {
                                     Actividad Reciente
                                 </h3>
                                 <div className="space-y-5">
-                                    {posts.slice(0, 3).map((post, i) => (
+                                    {posts.slice(0, 3).map((post) => (
                                         <div key={post.id} className="flex items-center gap-4">
                                             <div className="w-12 h-12 rounded-2xl bg-gray-100 overflow-hidden">
                                                 <img src={post.image_url} className="w-full h-full object-cover" alt="" />

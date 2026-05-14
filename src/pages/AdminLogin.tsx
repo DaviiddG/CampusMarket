@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MobileContainer from '@/components/layout/MobileContainer';
 import { useAuth } from '@/hooks/useAuth';
-import { ChevronLeft, ShieldAlert, Lock, Eye, EyeOff, CheckCircle } from 'lucide-react';
+import { ShieldAlert, Eye, EyeOff, CheckCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ShimmerButton } from "@/registry/magicui/shimmer-button";
 import { useAuthContext } from '@/contexts/AuthContext';
