@@ -590,6 +590,13 @@ export default function Profile() {
               </span>
             )}
           </button>
+          {role === 'admin' && (
+            <button 
+              onClick={() => navigate('/admin-dashboard')}
+              className="flex-1 h-[32px] bg-black rounded-md font-roboto font-bold text-[13px] text-white flex items-center justify-center gap-1.5 hover:bg-gray-800 transition-colors">
+              Panel Admin
+            </button>
+          )}
         </div>
 
         {/* Tabs */}

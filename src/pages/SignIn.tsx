@@ -20,8 +20,8 @@ export default function SignIn() {
     React.useEffect(() => {
         if (session && !showSuccess) {
             const metadata = session.user.user_metadata || {};
-            const hasPersonalized = metadata.has_personalized || localStorage.getItem('hasPersonalized');
-            const hasSeenOnboarding = metadata.has_seen_onboarding || localStorage.getItem('hasSeenOnboarding');
+            const hasPersonalized = metadata.has_personalized === true || localStorage.getItem('hasPersonalized') === 'true';
+            const hasSeenOnboarding = metadata.has_seen_onboarding === true || localStorage.getItem('hasSeenOnboarding') === 'true';
             if (hasPersonalized) {
                 navigate('/home', { replace: true });
             } else if (hasSeenOnboarding) {
@@ -41,8 +41,8 @@ export default function SignIn() {
             setShowSuccess(true);
             setTimeout(() => {
                 const metadata = result.user?.user_metadata || {};
-                const hasPersonalized = metadata.has_personalized || localStorage.getItem('hasPersonalized');
-                const hasSeenOnboarding = metadata.has_seen_onboarding || localStorage.getItem('hasSeenOnboarding');
+                const hasPersonalized = metadata.has_personalized === true || localStorage.getItem('hasPersonalized') === 'true';
+                const hasSeenOnboarding = metadata.has_seen_onboarding === true || localStorage.getItem('hasSeenOnboarding') === 'true';
                 if (hasPersonalized) {
                     navigate('/home', { replace: true });
                 } else if (hasSeenOnboarding) {
@@ -55,7 +55,23 @@ export default function SignIn() {
     };
 
     return (
-        <MobileContainer className="p-6 relative overflow-hidden flex flex-col" showSidebars={false}>
+        <MobileContainer className="flex flex-col relative" showSidebars={false}>
+            {/* Admin Access - Lock Icon */}
+            <button 
+                onClick={() => {
+                    const code = prompt("Introduce el código de acceso maestro:");
+                    if (code === "admin123") {
+                        navigate('/admin-login');
+                    } else if (code !== null) {
+                        alert("Acceso denegado.");
+                    }
+                }}
+                className="absolute top-6 right-6 p-3 bg-white/50 backdrop-blur-sm rounded-full shadow-lg border border-white/50 hover:bg-white transition-colors group z-20"
+                title="Administrador"
+            >
+                <Lock className="w-5 h-5 text-[#102042] opacity-40 group-hover:opacity-100 transition-opacity" />
+            </button>
+
             {/* Success Overlay */}
             {showSuccess && (
                 <div className="absolute inset-0 z-50 bg-white/90 backdrop-blur-sm flex flex-col items-center justify-center animate-in fade-in duration-500">

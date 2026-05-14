@@ -9,7 +9,7 @@ export interface Notification {
   actor_id: string;
   actor_name: string;
   actor_avatar: string;
-  type: 'like' | 'follow' | 'comment' | 'share' | 'order' | 'order_confirmed';
+  type: 'like' | 'follow' | 'comment' | 'share' | 'order' | 'order_confirmed' | 'review';
   post_id?: string;
   post_image?: string;
   read: boolean;

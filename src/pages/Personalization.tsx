@@ -4,7 +4,7 @@ import MobileContainer from '@/components/layout/MobileContainer';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { ShimmerButton } from '@/registry/magicui/shimmer-button';
 import { motion, AnimatePresence } from 'motion/react';
-import { Search, Utensils, Shirt, MonitorSmartphone, BookOpen, Coffee, Store, PackagePlus, CheckCircle2 } from 'lucide-react';
+import { Search, Utensils, Shirt, MonitorSmartphone, BookOpen, Coffee, Store, PackagePlus, CheckCircle2, LogOut } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
@@ -51,6 +51,14 @@ export default function Personalization() {
       localStorage.setItem('hasPersonalized', 'true');
       navigate('/home', { replace: true });
     }, 1500);
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    localStorage.removeItem('hasPersonalized');
+    localStorage.removeItem('hasSeenOnboarding');
+    localStorage.removeItem('profileCompleted');
+    window.location.replace('/auth-portal');
   };
 
   const toggleInterest = (id: string) => {
@@ -188,6 +196,14 @@ export default function Personalization() {
                         : "Ir a mi panel"}
                   </span>
               </ShimmerButton>
+
+              <button 
+                onClick={handleLogout}
+                className="w-full mt-4 flex items-center justify-center gap-2 py-3 text-grayText/60 hover:text-red-500 transition-colors font-roboto text-sm font-bold"
+              >
+                <LogOut size={16} />
+                Cerrar Sesión
+              </button>
             </div>
           </motion.div>
         ) : (

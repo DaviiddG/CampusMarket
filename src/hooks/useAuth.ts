@@ -15,6 +15,13 @@ export function useAuth() {
                 options: options as never,
             });
             if (sbError) throw sbError;
+            
+            // Clear onboarding state for the new account
+            localStorage.removeItem('hasSeenOnboarding');
+            localStorage.removeItem('hasPersonalized');
+            localStorage.removeItem('profileCompleted');
+            localStorage.removeItem('hasSeenAppTour');
+            
             return data;
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : 'Error occurred during sign up';
@@ -63,6 +70,7 @@ export function useAuth() {
             localStorage.removeItem('hasSeenOnboarding');
             localStorage.removeItem('hasPersonalized');
             localStorage.removeItem('profileCompleted');
+            localStorage.removeItem('hasSeenAppTour');
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : 'Error occurred during sign out';
             setError(message);

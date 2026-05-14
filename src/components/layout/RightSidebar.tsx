@@ -38,7 +38,8 @@ export default function RightSidebar() {
           id: post.user_id,
           name: post.businessName,
           username: post.businessName.toLowerCase().replace(/\s+/g, '_'),
-          avatar: post.avatarUrl
+          avatar: post.avatarUrl,
+          role: post.role
         });
       }
     });
@@ -96,7 +97,9 @@ export default function RightSidebar() {
                   </div>
                   <div className="flex flex-col">
                     <span className="text-sm font-bold text-black leading-none">{s.username}</span>
-                    <span className="text-[11px] text-gray-400 leading-none mt-1">Nuevo en CampusMarket</span>
+                    <span className="text-[11px] text-gray-400 leading-none mt-1">
+                      {s.role === 'emprendedor' ? 'Negocio' : 'Nuevo en CampusMarket'}
+                    </span>
                   </div>
                 </Link>
                 <Link to={`/user/${s.id}`} className="text-[12px] font-bold text-primary hover:text-primary/70 transition-colors">

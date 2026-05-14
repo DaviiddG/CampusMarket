@@ -31,6 +31,7 @@ export default function NotificationsDrawer({ isOpen, onClose }: NotificationsDr
       case 'share': return <Send size={16} className="text-blue-500" />;
       case 'order': return <ShoppingBag size={16} className="text-green-600" />;
       case 'order_confirmed': return <Package size={16} className="text-blue-500" />;
+      case 'review': return <StarIcon size={16} className="text-yellow-400 fill-yellow-400" />;
       default: return null;
     }
   };
@@ -43,6 +44,7 @@ export default function NotificationsDrawer({ isOpen, onClose }: NotificationsDr
       case 'share': return 'compartió tu publicación.';
       case 'order': return '¡hizo un pedido de tu producto! 🛒';
       case 'order_confirmed': return 'ha confirmado tu pedido. ¡Prepárate para recibirlo! 📦';
+      case 'review': return 'te ha dejado una reseña.';
     }
   };
 

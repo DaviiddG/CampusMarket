@@ -16,6 +16,8 @@ import LeaveReview from './pages/LeaveReview'
 import SearchPage from './pages/Search'
 import Checkout from './pages/Checkout'
 import Chats from './pages/Chats'
+import AdminLogin from './pages/AdminLogin'
+import AdminDashboard from './pages/AdminDashboard'
 
 function AppRoutes() {
   const { session, loading } = useAuthContext();
@@ -25,8 +27,8 @@ function AppRoutes() {
   }
 
   const userMetadata = session?.user?.user_metadata || {};
-  const hasSeenOnboarding = userMetadata.has_seen_onboarding || localStorage.getItem('hasSeenOnboarding');
-  const hasPersonalized = userMetadata.has_personalized || localStorage.getItem('hasPersonalized');
+  const hasSeenOnboarding = userMetadata.has_seen_onboarding === true || localStorage.getItem('hasSeenOnboarding') === 'true';
+  const hasPersonalized = userMetadata.has_personalized === true || localStorage.getItem('hasPersonalized') === 'true';
 
   const RequireOnboarding = ({ children }: { children: ReactNode }) => {
     if (!session) return <Navigate to="/auth-portal" replace />;
@@ -58,6 +60,10 @@ function AppRoutes() {
       <Route path="/personalization" element={session ? <Personalization /> : <Navigate to="/auth-portal" replace />} />
       <Route path="/complete-profile" element={session ? <CompleteProfile /> : <Navigate to="/auth-portal" replace />} />
       <Route path="/explore" element={session ? <Explore /> : <Navigate to="/auth-portal" replace />} />
+      
+      {/* Admin Specific Routes */}
+      <Route path="/admin-login" element={<AdminLogin />} />
+      <Route path="/admin-dashboard" element={session?.user?.user_metadata?.role === 'admin' ? <AdminDashboard /> : <Navigate to="/admin-login" replace />} />
     </Routes>
   );
 }

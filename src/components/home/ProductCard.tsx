@@ -57,6 +57,7 @@ export default function ProductCard({
   const [sendingComment, setSendingComment] = useState(false);
 
   const isOwner = user?.id === postOwnerId;
+  const isAdmin = user?.user_metadata?.role === 'admin';
 
   // Follow state
   const [isFollowing, setIsFollowing] = useState(false);
@@ -66,7 +67,7 @@ export default function ProductCard({
 
 
   useEffect(() => {
-    if (!user || isOwner) return;
+    if (!user || isOwner || isAdmin) return;
     
     supabase
       .from('follows')
@@ -83,11 +84,11 @@ export default function ProductCard({
           setIsFollowing(false);
         }
       });
-  }, [user, postOwnerId, isOwner]);
+  }, [user, postOwnerId, isOwner, isAdmin]);
 
   const handleToggleFollow = async (e: React.MouseEvent) => {
     e.preventDefault();
-    if (!user || loadingFollow) return;
+    if (!user || loadingFollow || isAdmin) return;
     
     setLoadingFollow(true);
     if (isFollowing) {
@@ -120,10 +121,18 @@ export default function ProductCard({
 
 
 
-  const handleLike = () => toggleLike(id);
-  const handleSave = () => toggleSave(id);
+  const handleLike = () => {
+    if (isAdmin) return;
+    toggleLike(id);
+  };
+
+  const handleSave = () => {
+    if (isAdmin) return;
+    toggleSave(id);
+  };
 
   const handleDoubleClick = () => {
+    if (isAdmin) return;
     if (!isLiked) {
       toggleLike(id);
     }
@@ -191,7 +200,7 @@ export default function ProductCard({
   };
 
   const handleAddComment = async () => {
-    if (!commentText.trim()) return;
+    if (!commentText.trim() || isAdmin) return;
     setSendingComment(true);
     const success = await addComment(id, commentText);
     if (success) {
@@ -229,7 +238,7 @@ export default function ProductCard({
           >
             {businessName}
           </Link>
-          {!isOwner && (
+          {!isOwner && !isAdmin && (
             <>
               <span className="text-gray-300 text-xs flex-shrink-0">•</span>
               <button 
@@ -244,9 +253,15 @@ export default function ProductCard({
               </button>
             </>
           )}
+          {isAdmin && (
+            <>
+              <span className="text-gray-300 text-xs flex-shrink-0">•</span>
+              <span className="bg-[#102042] text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-widest">Moderando</span>
+            </>
+          )}
         </div>
         
-        {isOwner && (
+        {(isOwner || isAdmin) && (
           <div className="relative">
             <button 
               onClick={() => setShowOptionsMenu(!showOptionsMenu)}
@@ -255,6 +270,7 @@ export default function ProductCard({
               <MoreVertical size={20} className="text-gray-500" />
             </button>
 
+
             <AnimatePresence>
               {showOptionsMenu && (
                 <>
@@ -262,33 +278,36 @@ export default function ProductCard({
                     className="fixed inset-0 z-30" 
                     onClick={() => setShowOptionsMenu(false)} 
                   />
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.95, y: -10 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                    className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 z-40 overflow-hidden"
-                  >
-                    <button
-                      onClick={() => {
-                        setShowOptionsMenu(false);
-                        setShowEditModal(true);
-                      }}
-                      className="w-full px-4 py-3 text-left text-gray-700 flex items-center gap-3 hover:bg-gray-50 transition-colors border-b border-gray-50"
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                      className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 z-40 overflow-hidden"
                     >
-                      <Edit2 size={18} />
-                      <span className="font-roboto font-medium text-[14px]">Editar publicación</span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        setShowOptionsMenu(false);
-                        setShowDeleteConfirm(true);
-                      }}
-                      className="w-full px-4 py-3 text-left text-red-600 flex items-center gap-3 hover:bg-red-50 transition-colors"
-                    >
-                      <Trash2 size={18} />
-                      <span className="font-roboto font-medium text-[14px]">Eliminar publicación</span>
-                    </button>
-                  </motion.div>
+                      {isOwner && (
+                        <button
+                          onClick={() => {
+                            setShowOptionsMenu(false);
+                            setShowEditModal(true);
+                          }}
+                          className="w-full px-4 py-3 text-left text-gray-700 flex items-center gap-3 hover:bg-gray-50 transition-colors border-b border-gray-50"
+                        >
+                          <Edit2 size={18} />
+                          <span className="font-roboto font-medium text-[14px]">Editar publicación</span>
+                        </button>
+                      )}
+                      
+                      <button
+                        onClick={() => {
+                          setShowOptionsMenu(false);
+                          setShowDeleteConfirm(true);
+                        }}
+                        className="w-full px-4 py-3 text-left text-red-600 flex items-center gap-3 hover:bg-red-50 transition-colors"
+                      >
+                        <Trash2 size={18} />
+                        <span className="font-roboto font-medium text-[14px]">{isAdmin ? 'Moderación: Eliminar' : 'Eliminar publicación'}</span>
+                      </button>
+                    </motion.div>
                 </>
               )}
             </AnimatePresence>

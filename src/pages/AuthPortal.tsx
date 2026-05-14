@@ -2,12 +2,29 @@ import { useNavigate } from 'react-router-dom';
 import MobileContainer from '@/components/layout/MobileContainer';
 import logoUrl from '@/assets/logo.png';
 import { ShimmerButton } from "@/registry/magicui/shimmer-button";
+import { Lock } from 'lucide-react';
 
 export default function AuthPortal() {
     const navigate = useNavigate();
 
     return (
-        <MobileContainer className="flex flex-col" showSidebars={false}>
+        <MobileContainer className="flex flex-col relative" showSidebars={false}>
+            {/* Admin Access - Lock Icon */}
+            <button 
+                onClick={() => {
+                    const code = prompt("Introduce el código de acceso maestro:");
+                    if (code === "admin123") {
+                        navigate('/admin-login');
+                    } else if (code !== null) {
+                        alert("Acceso denegado.");
+                    }
+                }}
+                className="absolute top-6 right-6 p-3 bg-white/50 backdrop-blur-sm rounded-full shadow-lg border border-white/50 hover:bg-white transition-colors group z-20"
+                title="Administrador"
+            >
+                <Lock className="w-5 h-5 text-[#102042] opacity-40 group-hover:opacity-100 transition-opacity" />
+            </button>
+
             {/* Logo Section */}
             <div className="flex-1 flex flex-col items-center justify-center p-6 pb-0">
                 <div className="mb-8 transform hover:scale-105 transition-transform duration-500 w-full flex justify-center">

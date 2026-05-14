@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import MobileContainer from '@/components/layout/MobileContainer';
 import BottomNav from '@/components/layout/BottomNav';
-import { ChevronLeft, MoreVertical, MessageCircle, Instagram, Facebook, Star, ChevronRight, MessageSquare } from 'lucide-react';
+import { ChevronLeft, MoreVertical, MessageCircle, Instagram, Facebook, Star, ChevronRight, MessageSquare, Trash2, Key, ShieldAlert } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useFeedContext, type Review } from '@/contexts/FeedContext';
@@ -27,11 +27,27 @@ export default function UserProfile() {
   const [reviewsGiven, setReviewsGiven] = useState<Review[]>([]);
   const [showReviewsModal, setShowReviewsModal] = useState(false);
   const [selectedPost, setSelectedPost] = useState<any>(null);
+  const [showAdminMenu, setShowAdminMenu] = useState(false);
   
+  const adminMenuRef = useRef<HTMLDivElement>(null);
   const { getOrCreateChat, starting } = useStartChat();
 
   const userPosts = posts.filter(p => p.user_id === userId);
   const popular = userPosts.slice().reverse().slice(0, 4);
+
+  // Admin Check
+  const isAdmin = currentUser?.user_metadata?.role === 'admin';
+
+  // Close menu on click outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (adminMenuRef.current && !adminMenuRef.current.contains(event.target as Node)) {
+        setShowAdminMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Compute real average rating from reviews (only for business)
   const isUsuario = targetUser?.role === 'usuario';
@@ -124,7 +140,7 @@ export default function UserProfile() {
   }, [userId, targetUser?.role]);
 
   const handleFollow = async () => {
-    if (!currentUser || !userId) return;
+    if (!currentUser || !userId || isAdmin) return;
 
     if (isFollowing) {
       await supabase.from('follows').delete().eq('follower_id', currentUser.id).eq('following_id', userId);
@@ -135,41 +151,57 @@ export default function UserProfile() {
       setIsFollowing(true);
       setFollowersCount(prev => prev + 1);
       
-      // TRIGGER NOTIFICATION
-      console.log('--- DEBUG FOLLOW ---');
-      console.log('Usuario a seguir (Target):', userId);
-      console.log('Usuario actual (Actor):', currentUser.id);
-
       try {
         if (userId !== currentUser.id) {
-          const { error: notifError } = await supabase.from('notifications').insert({
+          await supabase.from('notifications').insert({
             user_id: userId,
             actor_id: currentUser.id,
             actor_name: currentUser.user_metadata?.full_name || currentUser.email?.split('@')[0] || 'Un usuario',
             actor_avatar: currentUser.user_metadata?.avatar_url || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI0UyRThGMCIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNDAiIHI9IjIwIiBmaWxsPSIjOTRBM0I4Ii8+PHBhdGggZD0iTTIwIDEwMGEzMCAzMCAwIDAgMSA2MCAwIiBmaWxsPSIjOTRBM0I4Ii8+PC9zdmc+',
             type: 'follow'
           });
-
-          if (notifError) {
-            console.error('Error al insertar notificación de follow:', notifError);
-          } else {
-            console.log('✅ Notificación de follow enviada con éxito');
-          }
-        } else {
-          console.log('ℹ️ Self-follow: No se envía notificación a uno mismo.');
         }
       } catch (err) {
-        console.error('Error inesperado en follow notif:', err);
+        console.error('Error unexpected in follow notif:', err);
       }
-      console.log('--------------------');
     }
   };
 
   const handleStartChat = async () => {
-    if (starting || !userId) return;
+    if (starting || !userId || isAdmin) return;
     const chatId = await getOrCreateChat(userId);
     if (chatId) {
       navigate(`/chat/${chatId}`);
+    }
+  };
+
+  const handleDeleteUser = async () => {
+    if (!isAdmin || !targetUser) return;
+    if (window.confirm(`¿Estás seguro de que deseas eliminar permanentemente al usuario "${targetUser.businessName}"? Esta acción no se puede deshacer.`)) {
+      try {
+        const { error } = await supabase
+          .from('profiles')
+          .delete()
+          .eq('id', targetUser.id);
+        
+        if (error) throw error;
+        
+        alert('Usuario eliminado con éxito de la base de datos de perfiles.');
+        navigate('/admin-dashboard');
+      } catch (err) {
+        console.error('Error al eliminar usuario:', err);
+        alert('Error al intentar eliminar el usuario.');
+      }
+    }
+  };
+
+  const handleChangePassword = () => {
+    if (!isAdmin || !targetUser) return;
+    const newPass = prompt(`Introduce la nueva contraseña para ${targetUser.businessName}:`);
+    if (newPass && newPass.length >= 6) {
+      alert(`Lógica para cambiar contraseña a "${newPass}" activada. (Requiere Edge Function o Supabase Admin Auth)`);
+    } else if (newPass) {
+      alert('La contraseña debe tener al menos 6 caracteres.');
     }
   };
 
@@ -192,11 +224,67 @@ export default function UserProfile() {
             <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-black hover:bg-gray-100 rounded-full transition-colors">
               <ChevronLeft size={24} />
             </button>
-            <h1 className="font-roboto font-bold text-[18px]">Perfil</h1>
-            <button className="p-2 -mr-2 text-black hover:bg-gray-100 rounded-full transition-colors">
-              <MoreVertical size={20} />
-            </button>
+            <h1 className="font-roboto font-bold text-[18px]">
+              {isAdmin ? 'Moderando Perfil' : 'Perfil'}
+            </h1>
+            <div className="relative" ref={adminMenuRef}>
+              <button 
+                onClick={() => setShowAdminMenu(!showAdminMenu)}
+                className="p-2 -mr-2 text-black hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <MoreVertical size={20} />
+              </button>
+
+              {/* Dropdown Menu para Admin */}
+              <AnimatePresence>
+                {showAdminMenu && isAdmin && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                    className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 z-50 overflow-hidden"
+                  >
+                    <div className="px-4 py-2 border-b border-gray-50 mb-1">
+                      <p className="text-[11px] font-bold text-red-500 flex items-center gap-1 uppercase tracking-wider">
+                        <ShieldAlert size={12} />
+                        Gestión de Admin
+                      </p>
+                    </div>
+                    <button 
+                      onClick={() => {
+                        setShowAdminMenu(false);
+                        handleChangePassword();
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 text-black text-sm transition-colors font-roboto"
+                    >
+                      <Key size={18} className="text-blue-500" />
+                      Cambiar Contraseña
+                    </button>
+                    <button 
+                      onClick={() => {
+                        setShowAdminMenu(false);
+                        handleDeleteUser();
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-50 text-red-600 text-sm transition-colors font-roboto"
+                    >
+                      <Trash2 size={18} />
+                      Eliminar Usuario
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
+
+          {/* Moderation Badge Desktop */}
+          {isAdmin && (
+            <div className="hidden lg:flex px-6 mt-8">
+              <div className="bg-red-50 text-red-600 border border-red-100 px-4 py-2 rounded-2xl flex items-center gap-2">
+                <ShieldAlert size={18} />
+                <span className="font-roboto font-bold text-sm">MODO MODERACIÓN: Tienes control total sobre este perfil</span>
+              </div>
+            </div>
+          )}
 
           {/* Profile Info - Responsive Header */}
           <div className="flex flex-col lg:flex-row items-center lg:items-start gap-8 lg:gap-14 px-6 mt-6 lg:mt-12">
@@ -221,27 +309,30 @@ export default function UserProfile() {
                 <div className="flex gap-2">
                   <button 
                     onClick={handleFollow}
+                    disabled={isAdmin}
                     className={cn(
                       "px-6 py-1.5 rounded-xl font-roboto font-bold text-sm transition-all shadow-sm",
                       isFollowing 
                         ? "bg-gray-100 text-black border border-gray-200" 
-                        : "bg-primary text-white shadow-lg shadow-primary/20"
+                        : "bg-primary text-white shadow-lg shadow-primary/20",
+                      isAdmin && "opacity-50 cursor-not-allowed grayscale"
                     )}
                   >
                     {isFollowing ? 'Siguiendo' : 'Seguir'}
                   </button>
                   <button 
                     onClick={handleStartChat}
-                    disabled={starting}
-                    className="px-6 py-1.5 bg-gray-100 hover:bg-gray-200 text-black font-roboto font-bold text-sm rounded-xl border border-gray-200 transition-all flex items-center gap-1 disabled:opacity-50"
+                    disabled={starting || isAdmin}
+                    className="px-6 py-1.5 bg-gray-100 hover:bg-gray-200 text-black font-roboto font-bold text-sm rounded-xl border border-gray-200 transition-all flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <MessageSquare size={16} />
                     Mensaje
                   </button>
                   {!isUsuario && (
                     <button 
-                      onClick={() => navigate(`/review/${userId}`)}
-                      className="px-6 py-1.5 bg-gray-100 hover:bg-gray-200 text-black font-roboto font-bold text-sm rounded-xl border border-gray-200 transition-all"
+                      onClick={() => !isAdmin && navigate(`/review/${userId}`)}
+                      disabled={isAdmin}
+                      className="px-6 py-1.5 bg-gray-100 hover:bg-gray-200 text-black font-roboto font-bold text-sm rounded-xl border border-gray-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Reseñar
                     </button>
@@ -341,8 +432,13 @@ export default function UserProfile() {
                   </div>
                   <div className="grid grid-cols-3 gap-1 px-1">
                     {userPosts.map((post) => (
-                      <div key={post.id} onClick={() => setSelectedPost(post)} className="aspect-square bg-gray-50 overflow-hidden cursor-pointer">
+                      <div key={post.id} onClick={() => setSelectedPost(post)} className="aspect-square bg-gray-50 overflow-hidden cursor-pointer group relative">
                         <img src={post.imageUrl} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="Product" />
+                        {isAdmin && (
+                          <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                            <ShieldAlert className="text-white" size={24} />
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -357,7 +453,7 @@ export default function UserProfile() {
                   </div>
                   <div className="grid grid-cols-3 gap-1 px-1">
                     {popular.map((post) => (
-                      <div key={post.id + '_popular'} onClick={() => setSelectedPost(post)} className="aspect-square bg-gray-50 overflow-hidden cursor-pointer">
+                      <div key={post.id + '_popular'} onClick={() => setSelectedPost(post)} className="aspect-square bg-gray-50 overflow-hidden cursor-pointer group">
                         <img src={post.imageUrl} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="Popular" />
                       </div>
                     ))}
@@ -464,7 +560,7 @@ export default function UserProfile() {
                 <div className="px-6 py-8 text-center bg-gray-50/50 mx-6 rounded-2xl border border-gray-100 border-dashed">
                   <Star size={24} className="mx-auto mb-2 text-gray-300" />
                   <p className="text-gray-400 text-sm font-roboto mb-4">{isUsuario ? 'Este usuario no ha escrito reseñas.' : 'Aún no hay reseñas para este negocio.'}</p>
-                  {!isUsuario && (
+                  {!isUsuario && !isAdmin && (
                     <button
                       onClick={() => navigate(`/review/${userId}`)}
                       className="px-4 py-2 bg-blue-500 text-white rounded-full font-roboto font-medium text-sm hover:bg-blue-600 transition-colors"
@@ -521,17 +617,25 @@ export default function UserProfile() {
                 className="relative bg-white rounded-2xl shadow-2xl w-full max-w-[500px] max-h-[90vh] flex flex-col overflow-hidden"
               >
                 {/* Header */}
-                <div className="flex items-center gap-4 px-4 py-4 border-b border-gray-100 flex-shrink-0">
-                  <button 
-                    onClick={() => setSelectedPost(null)}
-                    className="p-1 -ml-1 hover:bg-gray-100 rounded-full transition-colors"
-                  >
-                    <ChevronLeft size={24} className="text-black" />
-                  </button>
-                  <div className="flex flex-col">
-                    <span className="font-roboto font-light text-[12px] text-grayText uppercase">Publicaciones</span>
-                    <span className="font-roboto font-bold text-[14px] text-black">{selectedPost.businessName}</span>
+                <div className="flex items-center justify-between px-4 py-4 border-b border-gray-100 flex-shrink-0">
+                  <div className="flex items-center gap-4">
+                    <button 
+                      onClick={() => setSelectedPost(null)}
+                      className="p-1 -ml-1 hover:bg-gray-100 rounded-full transition-colors"
+                    >
+                      <ChevronLeft size={24} className="text-black" />
+                    </button>
+                    <div className="flex flex-col">
+                      <span className="font-roboto font-light text-[12px] text-grayText uppercase">Publicaciones</span>
+                      <span className="font-roboto font-bold text-[14px] text-black">{selectedPost.businessName}</span>
+                    </div>
                   </div>
+                  {isAdmin && (
+                    <div className="flex items-center gap-2 bg-red-50 text-red-600 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border border-red-100">
+                      <ShieldAlert size={12} />
+                      Moderando
+                    </div>
+                  )}
                 </div>
                 {/* Scrollable Content */}
                 <div className="flex-1 overflow-y-auto w-full no-scrollbar">

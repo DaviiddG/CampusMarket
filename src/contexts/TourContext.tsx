@@ -126,6 +126,8 @@ export function TourProvider({ children }: { children: ReactNode }) {
   // Load initial tour state from localStorage or user metadata
   useEffect(() => {
     if (!user) {
+      setHasSeenTour(false);
+      setIsActive(false);
       setIsLoaded(true);
       return;
     }
@@ -133,9 +135,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
     const localSeen = localStorage.getItem('hasSeenAppTour') === 'true';
     const metadataSeen = user.user_metadata?.has_seen_tour === true;
 
-    if (localSeen || metadataSeen) {
-      setHasSeenTour(true);
-    }
+    setHasSeenTour(localSeen || metadataSeen);
     setIsLoaded(true);
   }, [user]);
 

@@ -113,7 +113,7 @@ export default function SearchPage() {
           {profile.business_name}
         </p>
         <p className="font-roboto text-[12px] text-gray-400 truncate">
-          {profile.role === 'emprendedor' ? 'Emprendedor · CampusMarket' : 'Usuario · CampusMarket'}
+          {profile.role === 'emprendedor' ? 'Negocio · CampusMarket' : 'Usuario · CampusMarket'}
         </p>
       </div>
       <ArrowRight size={16} className="text-gray-300 group-hover:text-primary group-hover:translate-x-0.5 transition-all flex-shrink-0" />

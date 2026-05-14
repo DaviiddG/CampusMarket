@@ -36,6 +36,7 @@ export interface Post {
   description: string;
   category?: string;
   likes: number;
+  role?: string;
 }
 
 export interface OrderData {
@@ -104,7 +105,8 @@ export const FeedProvider = ({ children }: { children: ReactNode }) => {
             price: newPostRaw.price,
             description: newPostRaw.description,
             category: newPostRaw.category,
-            likes: 0
+            likes: 0,
+            role: newPostRaw.role // Assumes it might be there, or we'll fetch it later
           };
           setPosts(prev => {
             if (prev.some(p => p.id === newPost.id)) return prev;
@@ -173,7 +175,7 @@ export const FeedProvider = ({ children }: { children: ReactNode }) => {
       if (uniqueUserIds.length > 0) {
         const { data: profileData } = await supabase
           .from('profiles')
-          .select('id, avatar_url, business_name')
+          .select('id, avatar_url, business_name, role')
           .in('id', uniqueUserIds);
 
         if (profileData) {
@@ -192,12 +194,15 @@ export const FeedProvider = ({ children }: { children: ReactNode }) => {
         if (profile) {
           post.avatarUrl = profile.avatar_url || DEFAULT_AVATAR;
           if (profile.business_name) post.businessName = profile.business_name;
+          if (profile.role) post.role = profile.role;
         } else if (user && normalizedId === user.id.toLowerCase()) {
           // Fallback to local session only if profiles table data is missing
           const metaAvatar = user.user_metadata?.avatar_url;
           const metaName = user.user_metadata?.full_name || user.email?.split('@')[0];
+          const metaRole = user.user_metadata?.role;
           post.avatarUrl = metaAvatar || DEFAULT_AVATAR;
           if (metaName) post.businessName = metaName;
+          if (metaRole) post.role = metaRole;
         }
 
         // Priority 3: Maintain fallback for unknown users if DiceBear sneaks in
