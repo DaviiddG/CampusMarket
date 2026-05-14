@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useTour } from '@/contexts/TourContext';
 import { motion, AnimatePresence } from 'motion/react';
-import { ChevronRight, ChevronLeft, X, Compass, Home, Search, Bell, Send, Plus, User, Rocket, CheckCircle, Settings, Bookmark, Heart, MoveRight } from 'lucide-react';
+import { ChevronRight, X, Compass, Home, Search, Bell, Send, Plus, User, Rocket, CheckCircle, Settings, Bookmark, Heart } from 'lucide-react';
 
 export default function AppTour() {
   const {

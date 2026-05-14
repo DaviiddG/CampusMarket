@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Heart, MessageCircle, Send, Bookmark, MoreVertical, Trash2, Edit2, MessageSquare } from 'lucide-react';
+import { Heart, MessageCircle, Send, Bookmark, MoreVertical, Trash2, Edit2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useFeedContext, type Comment } from '@/contexts/FeedContext';
 import { useAuthContext } from '@/contexts/AuthContext';
-import { useStartChat } from '@/hooks/useChat';
+
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { supabase } from '@/lib/supabase';
@@ -63,7 +63,7 @@ export default function ProductCard({
   const [loadingFollow, setLoadingFollow] = useState(false);
   
   // Chat state
-  const { getOrCreateChat, starting } = useStartChat();
+
 
   useEffect(() => {
     if (!user || isOwner) return;
@@ -118,15 +118,7 @@ export default function ProductCard({
     setLoadingFollow(false);
   };
 
-  const handleStartChat = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
-    if (starting) return;
-    const chatId = await getOrCreateChat(postOwnerId);
-    if (chatId) {
-      navigate(`/chat/${chatId}`);
-    }
-  };
+
 
   const handleLike = () => toggleLike(id);
   const handleSave = () => toggleSave(id);

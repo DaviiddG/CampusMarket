@@ -18,7 +18,7 @@ export default function Profile() {
   const { user } = useAuthContext();
   const { signOut } = useAuth();
   const { posts, savedPostIds, getReviews, getReviewsGiven } = useFeedContext();
-  const { startTour, startProfileTour } = useTour();
+  const { startProfileTour } = useTour();
   
   const [activeTab, setActiveTab] = useState<'posts' | 'saved' | 'reviews' | 'purchases'>('posts');
   const [reviews, setReviews] = useState<Review[]>([]);
